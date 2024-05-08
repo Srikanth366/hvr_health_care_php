@@ -7,6 +7,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ErrorController;
+use App\Http\Controllers\InternationPatientController;
+use App\Http\Controllers\InsuranceRequestsController;
 
 
 /*
@@ -41,13 +43,14 @@ Route::get("DoctorProfile/{id}",[DoctorController::class,"getDoctorProfile"]);
 
 
 Route::get("ActiveDoctors",[DoctorController::class,"getActivedoctors"]);
-    Route::get("InactiveDoctors",[DoctorController::class,"getNotActivedoctors"]);
-    //Route::get("DoctorProfile/{id}",[DoctorController::class,"getDoctorProfile"]);
-    Route::put("UpdateDoctorstatus",[DoctorController::class,"updateDoctorStatus"]);
-    Route::put("DoctorProfileUpdate",[DoctorController::class,"updateDoctorProfile"]);
-    Route::post("uploadProfile",[DoctorController::class,"UploadProfile"]);
-    Route::get('viewprofile',[DoctorController::class,"viewprofile"]);
+Route::get("InactiveDoctors",[DoctorController::class,"getNotActivedoctors"]);
+//Route::get("DoctorProfile/{id}",[DoctorController::class,"getDoctorProfile"]);
+Route::put("UpdateDoctorstatus",[DoctorController::class,"updateDoctorStatus"]);
+Route::put("DoctorProfileUpdate",[DoctorController::class,"updateDoctorProfile"]);
+Route::post("uploadProfile",[DoctorController::class,"UploadProfile"]);
+Route::get('viewprofile',[DoctorController::class,"viewprofile"]);
 
+Route::post("uploaddocuments",[DoctorController::class,"uploadDocuments"]);
 
 
 //Route::get('DoctorProfile/{id}', [DoctorController::class, 'getDoctorProfile'])->middleware('auth.error.route');
@@ -94,3 +97,10 @@ Route::post("userhangepassword",[UserController::class,"customerchangePassword"]
 Route::post("LoginPage",[UserController::class,"CommonloginAllUsers"]);
 
 Route::get("countrylist",[CustomerController::class,"getcountry"]);
+
+Route::post("CreateInternationalPatient",[InternationPatientController::class,"create"]);
+Route::get("ViewInternationalPatient",[InternationPatientController::class,"index"]);
+
+
+Route::post("CreateInsuranceRequest",[InsuranceRequestsController::class,"create"]);
+Route::get("ViewInsuranceRequest",[InsuranceRequestsController::class,"index"]);

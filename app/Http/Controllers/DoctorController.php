@@ -14,6 +14,7 @@ use App\Mail\OrderShippedMail;
 use App\Mail\WelcomeEmail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Models\upload_images_documents;
 
 require_once app_path('helpers.php');
 
@@ -53,6 +54,7 @@ class DoctorController extends Controller
                'profile' => 'required',
                'password' => 'required',
                'specialist' => 'required',
+               'NMC_Registration_NO' => 'required'
             ]);
 
             
@@ -86,6 +88,7 @@ class DoctorController extends Controller
                'profile_photo' => $request->profile_photo ? $request->profile_photo : '0',
                'password' => Hash::make($request->password) ? Hash::make($request->password) : Hash::make('Sree@1234'),
                'specialist' => $request->specialist ? $request->specialist : '1',
+               'NMC_Registration_NO' => $request->NMC_Registration_NO ? $request->NMC_Registration_NO : '0'
            ]);
            
            if ($user) {
@@ -107,7 +110,7 @@ class DoctorController extends Controller
                 return response()->json([
                     'status' => true,
                     'message' => 'Doctor Created Successfully',
-                    'token' => $user->createToken("API TOKEN")->plainTextToken
+                   // 'token' => $user->createToken("API TOKEN")->plainTextToken
                 ], 200);
             }
 
@@ -134,7 +137,9 @@ class DoctorController extends Controller
      */
 
      public function loginUser(Request $request)
-    {
+    {  
+        try {
+
         /* $user = hvr_doctors::where('email', $request->email)->first();
             if (!$user || !Hash::check($request->password, $user->password)) {
                 return response()->json([
@@ -149,8 +154,8 @@ class DoctorController extends Controller
                 'userid' => $user->id,
                 'token' => $token
             ], 201);
-        */   
-        
+        */ 
+
         $hvr_doctors = hvr_doctors::where('email', $request->email)->first();
         $user = User::where('email', $request->email)
             ->where('id', $hvr_doctors->id)
@@ -174,17 +179,25 @@ class DoctorController extends Controller
                 }
             }
 
-            $token = $user->createToken('my-app-token')->plainTextToken;
-        
-            $response = [
-                'status' => true,
-                'message' => 'User Logged In Successfully',
-                'user' => $userData,
-                'userid' => $user->id,
-                'token' => $token
-            ];
-        
-             return response($response, 201);
+            if ($userData) {
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'User Logged In Successfully',
+                        'user' => $userData,
+                        'userid' => $user->id,
+                        'token' => $user->createToken('my-app-token')->plainTextToken
+                    ], 200);
+            } else {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Something went wrong, Please try again!',
+                    ], 403);
+            }
+
+
+        }catch (\Exception $e) {
+            return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+        } 
         
     }
 
@@ -291,6 +304,7 @@ class DoctorController extends Controller
             'address' => 'required',
             'profile' => 'required',
             'specialist' => 'required',
+            'NMC_Registration_NO' => 'required'
         ]);
 
         if ($validator->fails()) {
@@ -316,6 +330,7 @@ class DoctorController extends Controller
             $doctor->address = $request->address;
             $doctor->profile = $request->profile;
             $doctor->specialist = $request->specialist;
+            $doctor->NMC_Registration_NO = $request->NMC_Registration_NO;
             $doctor->save();
             return response()->json([
                 'status' => true,
@@ -624,6 +639,103 @@ class DoctorController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'An error occurred, Please try again later!',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+
+    }
+
+    public function uploadDocuments(Request $request){
+
+        if($request->document_type == 'IMAGE') {
+            $validator = Validator::make($request->all(), [
+                'document_type' => 'required', 
+                'user_id' => 'required',
+                'user_type' => 'required',
+                'file' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120', // 5MB max size (5120 KB)
+            ], [
+                'file.required' => 'Please upload an image.',
+                'file.image' => 'The file must be an image.',
+                'file.mimes' => 'Only JPEG, PNG, JPG, GIF, and SVG files are allowed.',
+                'file.max' => 'The file size must be less than 5MB.',
+            ]);
+        } else if($request->document_type == 'CSV') {
+            $validator = Validator::make($request->all(), [
+                'document_type' => 'required', 
+                'user_id' => 'required',
+                'user_type' => 'required',
+                'file' => 'required|mimes:csv,excel,xls,xlsx,doc,docx,dot,dotx,rtf,odt|max:5120', // 50MB max size (5120 KB)
+            ], [
+                'file.required' => 'Please upload a CSV / Excel / Word file.',
+                'file.mimes' => 'Only CSV and Excel files are allowed.',
+                'file.max' => 'The file size must be less than 5MB.',
+            ]);
+        } else if($request->document_type == 'PDF') {
+            $validator = Validator::make($request->all(), [
+                'document_type' => 'required', 
+                'user_id' => 'required',
+                'user_type' => 'required',
+                'file' => 'required|mimes:pdf|max:51200', // 50MB max size (5120 KB)
+            ], [
+                'file.required' => 'Please upload a PDF file.',
+                'file.mimes' => 'Only PDF files are allowed.',
+                'file.max' => 'The file size must be less than 5MB.',
+            ]); 
+        } else if($request->document_type == 'VIDEOLINK') {
+            $validator = Validator::make($request->all(), [
+                'document_type' => 'required|in:VIDEOLINK', 
+                'user_id' => 'required',
+                'user_type' => 'required',
+                'file' => 'required|url'
+            ], [
+                'file.required' => 'Please enter a YouTube video URL.',
+                'file.url' => 'Please enter a valid URL.',
+                'file.regex' => 'Please enter a valid YouTube video URL.'
+            ]); 
+        }
+    
+        if ($validator->fails()) {
+            return response()->json(['status'=> false,
+                        'message' => 'Validation error',
+                        'errors' => implode(', ', $validator->errors()->all())
+            ], 422);
+        }
+
+        try {
+        
+        if($request->document_type == 'VIDEOLINK'){
+            $result = $request->file;
+            $message = 'Video link updated successfully!';
+        } else {
+            $result  = $request->file('file')->storePublicly('documents','public');
+            $message = 'Document Uploaded successfully';
+        }
+
+        $uploadDocument = new upload_images_documents();
+        $uploadDocument->document_url = $result;
+        $uploadDocument->document_type = $request->document_type;
+        $uploadDocument->uploaded_user_id = $request->user_id;
+        $uploadDocument->uploaded_user_type = $request->user_type;
+        $uploadDocument->save();
+
+        if($uploadDocument){
+        $uploadDocument->save();
+            return response()->json([
+                'status' => true,
+                'message' => $message,
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong, Please Try Again',
+            ], 500);
+        }
+        
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while updating the data',
                 'error' => $e->getMessage(),
             ], 500);
         }
