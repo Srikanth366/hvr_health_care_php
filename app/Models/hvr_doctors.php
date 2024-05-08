@@ -29,7 +29,7 @@ class hvr_doctors extends Model
                             'address',
                             'profile',
                             'profile_photo',
-                            'password','specialist'];
+                            'password','specialist','NMC_Registration_NO'];
 
     protected $hidden = ['password'];
 
