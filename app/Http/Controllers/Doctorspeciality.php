@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Specialists;
 use App\Models\hvr_doctors;
+use Illuminate\Support\Facades\File;
 
 class Doctorspeciality extends Controller
 {
@@ -62,18 +63,26 @@ class Doctorspeciality extends Controller
 
         $validator = Validator::make($request->all(), [
             'speciality' => 'required|string|max:100',
+            'file' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120', // 5MB max size (5120 KB)
+        ], [
+            'file.required' => 'Please upload an image.',
+            'file.image' => 'The file must be an image.',
+            'file.mimes' => 'Only JPEG, PNG, JPG, GIF, and SVG files are allowed.',
+            'file.max' => 'The file size must be less than 5MB.',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
                 'message' => 'Validation failed',
-                'errors' => $validator->errors(),
+                'errors' => implode(', ', $validator->errors()->all())
             ], 422);
         }
-        try {   
+        try {
+            $result  = $request->file('file')->storePublicly('icons','public');
             $Specialists = new Specialists;
             $Specialists->speciality = $request->speciality;
+            $Specialists->icon = $result;
             $Specialists->created_at  = date('Y-m-d H:i:s');
             $Specialists->save();
 
@@ -98,26 +107,42 @@ class Doctorspeciality extends Controller
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:specialists,id',
             'speciality' => 'required|string|max:255',
-        ]);
+            ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
                 'message' => 'Validation failed',
-                'errors' => $validator->errors(),
+                'errors' => implode(', ', $validator->errors()->all())
             ], 422);
         }
 
         try {
+            $result  = $request->file('file')->storePublicly('icons','public');
             $specialist = Specialists::findOrFail($request->id);
+            $imagePath = $specialist->icon;
             $specialist->speciality = $request->speciality;
+            $specialist->icon = $result;
             $specialist->updated_at  = date('Y-m-d H:i:s');
             $specialist->save();
+
+            if($specialist){
+                /* $assetUrl = env('ASSET_URL');
+                if (File::exists($assetUrl.$imagePath)) {
+                    File::delete($assetUrl.'/'.$imagePath);
+                } */
+
             return response()->json([
                 'status' => true,
                 'message' => 'Data updated successfully',
                 'data' => $specialist,
             ], 200);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'something went wrong!'
+                ], 403);
+            }
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,

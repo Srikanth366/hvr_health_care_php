@@ -37,7 +37,7 @@ Route::group(['middleware' => 'auth:sanctum'], function(){
 Route::post("logout",[DoctorController::class,"logoutuser"]);
 
 Route::post("addSpeciality",[Doctorspeciality::class,"addSpecialists"]);
-Route::put("updatespeciality",[Doctorspeciality::class,"updateSpecialists"]);
+Route::post("updatespeciality",[Doctorspeciality::class,"updateSpecialists"]);
 Route::delete("deletespeciality/{id}",[Doctorspeciality::class,"Deletepecialists"]);
 Route::get("DoctorProfile/{id}",[DoctorController::class,"getDoctorProfile"]);
 
