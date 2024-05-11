@@ -9,6 +9,8 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ErrorController;
 use App\Http\Controllers\InternationPatientController;
 use App\Http\Controllers\InsuranceRequestsController;
+use App\Http\Controllers\MasterController;
+use App\Http\Controllers\HospitalsController;
 
 
 /*
@@ -74,7 +76,6 @@ Route::post("doctorToken",[UserController::class,"generateToken"]);
 Route::post("UserToken",[UserController::class,"generateToken"]);
 Route::post("login",[UserController::class,'index']);
 
-
 Route::post("createCustomer",[CustomerController::class,"createCustomer"]);
 Route::post("CustomerPicture",[CustomerController::class,"UploadProfile"]);
 Route::post("CustomerLogin",[CustomerController::class,"loginUser"]);
@@ -104,3 +105,17 @@ Route::get("ViewInternationalPatient",[InternationPatientController::class,"inde
 
 Route::post("CreateInsuranceRequest",[InsuranceRequestsController::class,"create"]);
 Route::get("ViewInsuranceRequest",[InsuranceRequestsController::class,"index"]);
+
+
+Route::post("addMaster",[MasterController::class,"addMaster"]);
+Route::post("updateMaster",[MasterController::class,"updateMaster"]);
+Route::get("getMasterData",[MasterController::class,"getMasterData"]);
+
+
+Route::post("createhospitals",[HospitalsController::class,"createhospitals"]);
+Route::get("viewhospitallist",[HospitalsController::class,"gethospitalslist"]);
+Route::get("viewhospitallist/{id}",[HospitalsController::class,"gethospitalslist"]);
+Route::put("updatehospitals",[HospitalsController::class,"updatehospitals"]);
+Route::post("Appolintmentslot",[HospitalsController::class,"SetAppointmentslot"]);
+Route::get("viewWorkingHours/{userid}",[HospitalsController::class,"viewWorkingHours"]);
+

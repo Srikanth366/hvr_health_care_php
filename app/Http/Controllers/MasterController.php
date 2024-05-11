@@ -4,66 +4,19 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use App\Models\Specialists;
-use App\Models\hvr_doctors;
+use App\Models\masterdata;
 use Illuminate\Support\Facades\File;
 
-class Doctorspeciality extends Controller
+class MasterController extends Controller
 {
-
-    function getdoctorspeciality(){
-        try {
-        $specialties = Specialists::orderBy("id")->get();
-        return $this->apiResponse(true, 'Success', $specialties);
-        }catch (\Exception $e) {
-            return $this->apiResponse(false, 'Failed', [], $e->getMessage());
-        }
-    }
-
-    function Deletepecialists($id){
-
-        //$doctorExists = hvr_doctors::whereIn('specialist', [$id])->exists();
-        $doctorExists = hvr_doctors::where('specialist', 'like', '%' . $id . '%')->pluck('specialist');
-        $specialistsArray = $doctorExists->toArray();
-        $result = [];
-        foreach ($specialistsArray as $string) {
-            $values = explode(',', $string);
-            $result = array_merge($result, $values);
-        }
-    
-        $result = array_unique($result);
-        sort($result);
-        if (in_array_case_insensitive($id, $result)) {
-
-            return response()->json([
-                'status' => false,
-                'message' => 'Speciality cannot be deleted as it is associated with a doctor',
-            ], 422);
-
-        } else {
-            $speciality = Specialists::find($id);
-            if ($speciality) {
-                $speciality->delete();
-
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Speciality deleted successfully',
-                ], 200);
-            } else {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Speciality not found',
-                ], 404);
-            }
-        }
+    public function index(){
 
     }
 
-    function addSpecialists(Request $request){
+    function addMaster(Request $request){
 
         $validator = Validator::make($request->all(), [
-            'speciality' => 'required|string|max:100',
-            'category' => 'required|string|max:90',
+            'name' => 'required|string|max:100',
             'file' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120', // 5MB max size (5120 KB)
         ], [
             'file.required' => 'Please upload an image.',
@@ -81,10 +34,9 @@ class Doctorspeciality extends Controller
         }
         try {
             $result  = $request->file('file')->storePublicly('icons','public');
-            $Specialists = new Specialists;
-            $Specialists->speciality = $request->speciality;
+            $Specialists = new masterdata;
+            $Specialists->name = $request->name;
             $Specialists->icon = $result;
-            $Specialists->category = $request->category;
             $Specialists->created_at  = date('Y-m-d H:i:s');
             $Specialists->save();
 
@@ -104,12 +56,11 @@ class Doctorspeciality extends Controller
 
     }
 
-    function updateSpecialists(Request $request){
+    function updateMaster(Request $request){
         
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:specialists,id',
-            'speciality' => 'required|string|max:255',
-            'category' => 'required|string|max:90',
+            'name' => 'required|string|max:255',
             'file' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120', // 5MB max size (5120 KB)
         ], [
             'file.required' => 'Please upload an image.',
@@ -128,20 +79,14 @@ class Doctorspeciality extends Controller
 
         try {
             $result  = $request->file('file')->storePublicly('icons','public');
-            $specialist = Specialists::findOrFail($request->id);
-            $imagePath = $specialist->icon;
-            $specialist->speciality = $request->speciality;
+            $specialist = masterdata::findOrFail($request->id);
+            $specialist->name = $request->name;
             $specialist->icon = $result;
-            $specialist->category = $request->category;
             $specialist->updated_at  = date('Y-m-d H:i:s');
             $specialist->save();
 
             if($specialist){
-                /* $assetUrl = env('ASSET_URL');
-                if (File::exists($assetUrl.$imagePath)) {
-                    File::delete($assetUrl.'/'.$imagePath);
-                } */
-
+                
             return response()->json([
                 'status' => true,
                 'message' => 'Data updated successfully',
@@ -161,6 +106,15 @@ class Doctorspeciality extends Controller
             ], 500);
         }
 
+    }
+
+    function getMasterData(){
+        try {
+        $specialties = masterdata::orderBy("id")->get();
+        return $this->apiResponse(true, 'Success', $specialties);
+        }catch (\Exception $e) {
+            return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+        }
     }
 
 
