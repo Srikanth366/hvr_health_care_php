@@ -15,6 +15,8 @@ use App\Mail\WelcomeEmail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use App\Models\upload_images_documents;
+use App\Models\Specialists;
+
 
 require_once app_path('helpers.php');
 
@@ -240,10 +242,22 @@ class DoctorController extends Controller
         try {
             $doctorDetails = hvr_doctors::find($id);
 
+            $specialitys = explode(",", $doctorDetails->specialist);
+
                 if (!$doctorDetails) {
                     return $this->apiResponse(true, 'No Data found', []);
                 }else {
-                    return $this->apiResponse(true, 'Success', $doctorDetails);
+                    $doctorSpecialities = Specialists::query()->whereIn('id', $specialitys)->get();
+                   // return $this->apiResponse(true, 'Success', $doctorDetails, $doctorSpecialities);
+
+                   $response = [
+                    'status' => true,
+                    'message' => 'Success',
+                    'data' => $doctorDetails,
+                    'speciality'  => $doctorSpecialities
+                ];
+        
+                return response()->json($response);
                 }
             }catch (\Exception $e) {
                 return $this->apiResponse(false, 'Failed', [], $e->getMessage());
