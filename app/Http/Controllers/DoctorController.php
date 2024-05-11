@@ -18,7 +18,9 @@ use App\Models\upload_images_documents;
 use App\Models\Specialists;
 use App\Models\appcategoryconfig;
 use App\Models\availability;
-
+use App\Models\hospital;
+use App\Models\Diagnositcs;
+use App\Models\Pharmacy;
 
 require_once app_path('helpers.php');
 
@@ -160,10 +162,8 @@ class DoctorController extends Controller
             ], 201);
         */ 
 
-        $hvr_doctors = hvr_doctors::where('email', $request->email)->first();
-        $user = User::where('email', $request->email)
-            ->where('id', $hvr_doctors->id)
-            ->first();
+        //$hvr_doctors = hvr_doctors::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
         
            
             if (!$user || !Hash::check($request->password, $user->password)) {
@@ -178,7 +178,14 @@ class DoctorController extends Controller
                     $userData = Customers::where('email', $request->email)->first();
                 } else if($user->roles == "Doctor") {
                     $userData = hvr_doctors::where('email', $request->email)->first();
-                } else {
+                } else if($user->roles == "Hospital") {
+                    $userData = hospital::where('email', $request->email)->first();
+                } else if($user->roles == "Diagnositcs") {
+                    $userData = Diagnositcs::where('email', $request->email)->first();
+                } else if($user->roles == "Pharmacy"){
+                    $userData = Pharmacy::where('email', $request->email)->first();
+                }
+                else {
                     $userData = $user;
                 }
             }
@@ -187,8 +194,9 @@ class DoctorController extends Controller
                     return response()->json([
                         'status' => true,
                         'message' => 'User Logged In Successfully',
-                        'user' => $userData,
+                        //'user' => $userData,
                         'userid' => $user->id,
+                        'roles' => $user->roles,
                         'token' => $user->createToken('my-app-token')->plainTextToken
                     ], 200);
             } else {
@@ -366,6 +374,7 @@ class DoctorController extends Controller
     function UploadProfile(Request $request){
         
         $validator = Validator::make($request->all(), [
+            'role' => 'required',
             'file' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120', // 5MB max size (5120 KB)
         ], [
             'file.required' => 'Please upload an image.',
@@ -382,18 +391,36 @@ class DoctorController extends Controller
         }
 
         try {
-        $doctor = hvr_doctors::findOrFail($request->id);
-        $doctor->updated_at  = date('Y-m-d H:i:s');
         //$result  = $request->file('file')->store('ptofilephoto');
+
         $result  = $request->file('file')->storePublicly('ptofilephoto','public');
 
-        $doctor->profile_photo = $result;
+        if($request->role == 'Hospital'){
+            $profileData = hospital::findOrFail($request->id);
+            $profileData->logo = $result;
 
-        $doctor->save();
+        } else if($request->role == 'Doctor'){
+            $profileData = hvr_doctors::findOrFail($request->id);
+            $profileData->profile_photo = $result;
+
+        } else if($request->role == 'Diagnositcs'){
+            $profileData = Diagnositcs::findOrFail($request->id);
+            $profileData->logo = $result;
+
+        } else if($request->role == 'Customer'){
+            $profileData = Customers::findOrFail($request->id);
+            $profileData->profile_photo = $result;
+
+        } else if($request->role == 'Pharmacy'){
+            $profileData = Pharmacy::findOrFail($request->id);
+            $profileData->logo = $result;
+        }
+
+        $profileData->save();
             return response()->json([
                 'status' => true,
                 'message' => 'Profile Picture Updated successfully',
-                'data' => $doctor,
+                'data' => $profileData,
             ], 200);
 
         } catch (\Exception $e) {
@@ -765,6 +792,11 @@ class DoctorController extends Controller
             return response()->json(['status' => false,'message' => 'Email already registered'], 400);
             }
 
+            $existingMobile = hvr_doctors::where('phone', $request->phone)->first();
+            if ($existingMobile) {
+            return response()->json(['status' => false,'message' => 'Mobile Number already registered'], 400);
+            }
+
             $validateUser = Validator::make($request->all(), [
                 'first_name' => 'required',
                 'last_name' => 'required',
@@ -794,9 +826,10 @@ class DoctorController extends Controller
             $lastInsertId = User::orderBy('id', 'desc')->first()->id;
             $newinsertingId = $lastInsertId + 1;
             $roles  = 'Doctor';
+            $name = $request->first_name.' '.$request->last_name;
             $user = User::create([
                 'id'=> $newinsertingId,
-                'name' => $request->hospital_name,
+                'name' => $name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'roles' => $roles
@@ -824,7 +857,7 @@ class DoctorController extends Controller
                 ]);
 
                     if($docotrs){
-                        $categoryarray = explode(",", $request->category);
+                        $categoryarray = explode(",", $request->specialist);
                         foreach ($categoryarray as $cat) {
                             appcategoryconfig::create([
                             'user_type' => $roles,
