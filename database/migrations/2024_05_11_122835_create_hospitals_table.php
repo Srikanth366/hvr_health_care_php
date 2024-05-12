@@ -29,6 +29,7 @@ class CreateHospitalsTable extends Migration
             $table->string('latitude');
             $table->string('longitude');
             $table->string('registered_address');
+            $table->int('status')->default(1);
             $table->timestamps();
         });
 

@@ -22,6 +22,7 @@ use App\Models\hospital;
 use App\Models\Diagnositcs;
 use App\Models\Pharmacy;
 use App\Models\favorite;
+ 
 
 require_once app_path('helpers.php');
 
@@ -223,7 +224,8 @@ class DoctorController extends Controller
 
     function getActivedoctors(){
         try {
-            $doctors = hvr_doctors::where('profile_status', 1)->orderBy("id")->get();
+            //$doctors = hvr_doctors::where('profile_status', 1)->orderBy("id")->get();
+            $doctors = hvr_doctors::orderBy('id', 'desc')->get();
 
             if ($doctors->isEmpty()) {
                 return $this->apiResponse(true, 'No Data found.', []);
@@ -235,7 +237,7 @@ class DoctorController extends Controller
             }
     }
 
-    function getNotActivedoctors(){
+   /* function getNotActivedoctors(){
         try {
             $doctors = hvr_doctors::where('profile_status', 0)->orderBy("id")->get();
 
@@ -247,25 +249,26 @@ class DoctorController extends Controller
             }catch (\Exception $e) {
                 return $this->apiResponse(false, 'Failed', [], $e->getMessage());
             }
-    }
+    } */
 
     function getDoctorProfile($id){
         try {
             $doctorDetails = hvr_doctors::find($id);
 
-            $specialitys = explode(",", $doctorDetails->specialist);
-
                 if (!$doctorDetails) {
-                    return $this->apiResponse(true, 'No Data found', []);
+                    return $this->apiResponse(false, 'No Data found', []);
                 }else {
+                    $specialitys = explode(",", $doctorDetails->specialist);
                     $doctorSpecialities = Specialists::query()->whereIn('id', $specialitys)->get();
-                   // return $this->apiResponse(true, 'Success', $doctorDetails, $doctorSpecialities);
+                    $workingHours = availability::where('user_id', $id)->get();
+
 
                    $response = [
                     'status' => true,
                     'message' => 'Success',
                     'data' => $doctorDetails,
-                    'speciality'  => $doctorSpecialities
+                    'speciality'  => $doctorSpecialities,
+                    'WorkingHours' => $workingHours,
                 ];
         
                 return response()->json($response);
@@ -278,8 +281,9 @@ class DoctorController extends Controller
     function updateDoctorStatus(Request $request){
         
         $validator = Validator::make($request->all(), [
-            'id' => 'required|exists:hvr_doctors,id',
-            'profile_status' => 'required|string|max:10',
+            'id' => 'required|exists:users,id',
+            'profile_status' => 'required|string',
+            'role'=> 'required',
         ]);
 
         if ($validator->fails()) {
@@ -291,9 +295,33 @@ class DoctorController extends Controller
         }
 
         try {
+
+            if($$request->role == 'Doctor') {
             $doctor = hvr_doctors::findOrFail($request->id);
             $doctor->profile_status = $request->profile_status;
             $doctor->updated_at  = date('Y-m-d H:i:s');
+            } else if($request->role == 'Hospital') {
+                $doctor = hospital::findOrFail($request->id);
+                $doctor->status = $request->profile_status;
+
+            } else if($request->role == 'Diagnositcs') {
+                $doctor = Diagnositcs::findOrFail($request->id);
+                $doctor->status = $request->profile_status;
+
+            } else if($request->role == 'Pharmacy') {
+                $doctor = Pharmacy::findOrFail($request->id);
+                $doctor->status = $request->profile_status;
+
+            } else if($request->role == 'Customer') {
+                $doctor = Customers::findOrFail($request->id);
+                $doctor->status = $request->profile_status;
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid Data passed, Please try Again!',
+                ], 403);
+            }
+
             $doctor->save();
             return response()->json([
                 'status' => true,
@@ -394,30 +422,54 @@ class DoctorController extends Controller
         try {
         //$result  = $request->file('file')->store('ptofilephoto');
 
-        $result  = $request->file('file')->storePublicly('ptofilephoto','public');
-
         if($request->role == 'Hospital'){
-            $profileData = hospital::findOrFail($request->id);
-            $profileData->logo = $result;
+            $profileData = hospital::find($request->id);
+            if($profileData){
+                $result  = $request->file('file')->storePublicly('ptofilephoto','public');
+                $profileData->logo = $result;
+            } else {
+                return response()->json(['status' => false,'message' => 'Failed, Please Pass Valid data',], 400);
+            }
 
         } else if($request->role == 'Doctor'){
             $profileData = hvr_doctors::findOrFail($request->id);
-            $profileData->profile_photo = $result;
-
+            if($profileData){
+                $result  = $request->file('file')->storePublicly('ptofilephoto','public');
+                $profileData->profile_photo = $result;
+                $profileData->save();
+            } else {
+                return response()->json(['status' => false,'message' => 'Failed, Please Pass Valid data',], 400);
+            }
         } else if($request->role == 'Diagnositcs'){
             $profileData = Diagnositcs::findOrFail($request->id);
-            $profileData->logo = $result;
-
+            if($profileData){
+                $result  = $request->file('file')->storePublicly('ptofilephoto','public');
+                $profileData->logo = $result;
+                $profileData->save();
+            } else {
+                return response()->json(['status' => false,'message' => 'Failed, Please Pass Valid data',], 400);
+            }
         } else if($request->role == 'Customer'){
             $profileData = Customers::findOrFail($request->id);
-            $profileData->profile_photo = $result;
+            if($profileData){
+                $result  = $request->file('file')->storePublicly('ptofilephoto','public');
+                $profileData->profile_photo = $result;
+                $profileData->save();
+            } else {
+                return response()->json(['status' => false,'message' => 'Failed, Please Pass Valid data',], 400);
+            }
 
         } else if($request->role == 'Pharmacy'){
             $profileData = Pharmacy::findOrFail($request->id);
-            $profileData->logo = $result;
+            if($profileData){
+                $result  = $request->file('file')->storePublicly('ptofilephoto','public');
+                $profileData->logo = $result;
+                $profileData->save();
+            } else {
+                return response()->json(['status' => false,'message' => 'Failed, Please Pass Valid data',], 400);
+            }
         }
 
-        $profileData->save();
             return response()->json([
                 'status' => true,
                 'message' => 'Profile Picture Updated successfully',
@@ -494,7 +546,7 @@ class DoctorController extends Controller
             ) + sin( radians(?) ) *
             sin( radians( latitude ) ) )
             ) AS distance", [$latitude, $longitute, $latitude])
-            //->where('specialist', $specialist)
+            ->where('profile_status', '=', 1)
             ->whereRaw("CONCAT(',', specialist, ',') LIKE '%,$specialist,%'")
             ->having('distance', '<', $radius)
             ->orderBy('distance')
@@ -511,10 +563,13 @@ class DoctorController extends Controller
 
                         if($favoriteDoctors){
                             $is_favorite = 1;
+                            $favorite_id   = $favoriteDoctors->id;
                         } else{
                             $is_favorite = 0;
+                            $favorite_id = 0;
                         }
-                    $doctor['is_favorite'] = $is_favorite;    
+                    $doctor['is_favorite'] = $is_favorite;
+                    $doctor['favorite_id'] = $favorite_id;  
 
                     }
                 $message = 'Retrieved doctors within '. $radius.'km radius.';
@@ -905,6 +960,7 @@ class DoctorController extends Controller
                     ], 200);  
 
                     } else {
+                        User::destroy($newinsertingId);
                         return response()->json([
                             'status' => false,
                             'message' => 'Something went wrong, Please Try Again!',
@@ -918,6 +974,7 @@ class DoctorController extends Controller
                 ], 500);
             }
         }catch (\Exception $e) {
+            User::destroy($newinsertingId);
             return response()->json([
                 'status' => false,
                 'message' => 'An error occurred while updating the data',

@@ -25,6 +25,7 @@ class HospitalsController extends Controller
     function gethospitalslist($id = null){
         try {
             
+           /* $systemrole = 'Hospital';
             if($id == null){
             $hospitals = hospital::join('appcategoryconfigs', 'hospitals.id', '=', 'appcategoryconfigs.user_id')
                         ->join('specialists', 'appcategoryconfigs.category_id', '=', 'specialists.id')
@@ -32,6 +33,7 @@ class HospitalsController extends Controller
                         ->groupBy('hospitals.id')
                         ->select('hospitals.*', DB::raw('group_concat(specialists.speciality) as specialities'))
                         ->get();
+                        
             } else {
                 $hospitals = hospital::join('appcategoryconfigs', 'hospitals.id', '=', 'appcategoryconfigs.user_id')
                         ->join('specialists', 'appcategoryconfigs.category_id', '=', 'specialists.id')
@@ -40,11 +42,43 @@ class HospitalsController extends Controller
                         ->groupBy('hospitals.id')
                         ->select('hospitals.*', DB::raw('group_concat(specialists.speciality) as specialities'))
                         ->get();
-            }
 
-            if ($hospitals->isEmpty()) {
-                return $this->apiResponse(true, 'No Data found.', []);
-            }
+                /* $sql = "select `hospitals`.*, group_concat(specialists.speciality) as specialities from `hospitals` 
+                inner join `appcategoryconfigs` on `hospitals`.`id` = `appcategoryconfigs`.`user_id` 
+                inner join `specialists` on `appcategoryconfigs`.`category_id` = `specialists`.`id` 
+                where `appcategoryconfigs`.`user_type` = 'Hospital' and `hospitals`.`id` = $id
+                group by `hospitals`.`id`,`hospitals`.`hospital_name`";   
+                
+                $hospitals = DB::select($sql); */
+           /* } */
+
+           if($id == null){
+                $hospitals = hospital::orderBy("id","desc")->get();
+                if (!$hospitals) {
+                    return $this->apiResponse(false, 'No Data found.', []);
+                }
+                foreach ($hospitals as $hospital){
+                    $appconfig = appcategoryconfig::where("user_id", $hospital->id)->pluck('category_id')->implode(',');
+                    $categoryIds = explode(',', $appconfig);
+                    $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
+                    $hospital['specialities'] = implode(', ', $specialityNames);
+                }
+           } else {
+                $hospitals = hospital::where('id', $id)->first();
+                if (!$hospitals) {
+                    return $this->apiResponse(false, 'No Data found.', []);
+                } else {
+                    $appconfig = appcategoryconfig::where("user_id", $hospitals->id)->pluck('category_id')->implode(',');
+                    $categoryIds = explode(',', $appconfig);
+                    $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
+                    $hospitals['specialities'] = implode(', ', $specialityNames);
+                }
+            
+          }
+
+            /* if ($hospitals->isEmpty()) {
+                return $this->apiResponse(false, 'No Data found.', []);
+            } */
 
             return $this->apiResponse(true, 'Success', $hospitals);
             }catch (\Exception $e) {
@@ -76,12 +110,12 @@ class HospitalsController extends Controller
                'profile_description' => 'required',
                'registered_address' => 'required',
                'password' => 'required',
-               'logo' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
+              // 'logo' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
             ], [
-                'logo.required' => 'Please upload an image.',
-                'logo.image' => 'The file must be an image.',
-                'logo.mimes' => 'Only JPEG, PNG, JPG, GIF, and SVG files are allowed.',
-                'logo.max' => 'The file size must be less than 5MB.',
+               // 'logo.required' => 'Please upload an image.',
+               // 'logo.image' => 'The file must be an image.',
+               // 'logo.mimes' => 'Only JPEG, PNG, JPG, GIF, and SVG files are allowed.',
+               // 'logo.max' => 'The file size must be less than 5MB.',
             ]);
 
             if ($validateUser->fails()) {
@@ -105,7 +139,7 @@ class HospitalsController extends Controller
             ]);
 
             if ($user) {
-                $result  = $request->file('logo')->storePublicly('ptofilephoto','public');
+               // $result  = $request->file('logo')->storePublicly('ptofilephoto','public');
                 $hospital = hospital::create([
                'id' => $newinsertingId,
                'hospital_name' => $request->hospital_name ? $request->hospital_name : 'Guest',
@@ -121,7 +155,7 @@ class HospitalsController extends Controller
                'experience' => $request->experience ? $request->experience : '',
                'profile_description' => $request->profile_description ? $request->profile_description : '',
                'registered_address' => $request->registered_address ? $request->registered_address : '',
-               'logo' => $result ? $result : ''
+               'logo' => 0
            ]);
 
                     if($hospital){
@@ -135,13 +169,14 @@ class HospitalsController extends Controller
                             ]);
                         }
 
-                    Mail::to($request->email)->send(new WelcomeEmail($request->password,$request->hospital_name,$request->email));
+                    Mail::to($request->email)->send(new WelcomeEmail($request->password,$request->director_name,$request->email));
                     return response()->json([
                     'status' => true,
                     'message' => 'Hospital Created Successfully',
                     ], 200);  
 
                     } else {
+                        User::destroy($newinsertingId);
                         return response()->json([
                             'status' => false,
                             'message' => 'Something went wrong, Please Try Again!',
@@ -162,6 +197,7 @@ class HospitalsController extends Controller
             
 
         } catch (\Throwable $th) {
+            User::destroy($newinsertingId);
             return response()->json([
                 'status' => false,
                 'message' => $th->getMessage()
@@ -198,7 +234,11 @@ class HospitalsController extends Controller
                 ], 400);
             }
 
-                $hospitalData = hospital::findOrFail($request->id);
+                $hospitalData = hospital::find($request->id);
+                if (!$hospitalData) {
+                    return response()->json([
+                        'status' => false,'message' => 'Hospital data not found'], 400);
+                }
                 $hospitalData->hospital_name = $request->hospital_name;
                 $hospitalData->director_name = $request->director_name;
                 $hospitalData->hospital_contact_number = $request->hospital_contact_number;
@@ -435,6 +475,15 @@ class HospitalsController extends Controller
              }
 
         } catch (\Exception $e) {
+            return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+        }
+    }
+
+    public function GlobalStatusUpdate(Request $request){
+        try{
+                
+        }    
+        catch (\Exception $e) {
             return $this->apiResponse(false, 'Failed', [], $e->getMessage());
         }
     }
