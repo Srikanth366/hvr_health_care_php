@@ -21,6 +21,7 @@ use App\Models\availability;
 use App\Models\hospital;
 use App\Models\Diagnositcs;
 use App\Models\Pharmacy;
+use App\Models\favorite;
 
 require_once app_path('helpers.php');
 
@@ -441,6 +442,7 @@ class DoctorController extends Controller
                 'latitude' => 'required|numeric',
                 'longitute' => 'required|numeric',
                 'specialist' => 'required|string',
+                'customer_id'  => 'required',
                 //'radius' => 'required|numeric',
             ];
             
@@ -467,11 +469,25 @@ class DoctorController extends Controller
         $latitude = $request->input('latitude');
         $longitute = $request->input('longitute');
         $specialist = $request->input('specialist');
-        $radius = 5; //$request->input('radius'); // in kilometers
+        $radius = 10; //$request->input('radius'); // in kilometers
 
         // Calculate distance using Haversine formula
-        $doctors = hvr_doctors::selectRaw("
+         /* $doctors = hvr_doctors::selectRaw("
             *, 
+            ( 6371 * acos( cos( radians(?) ) *
+            cos( radians( latitude ) )
+            * cos( radians( longitute ) - radians(?)
+            ) + sin( radians(?) ) *
+            sin( radians( latitude ) ) )
+            ) AS distance", [$latitude, $longitute, $latitude])
+            //->where('specialist', $specialist)
+            ->whereRaw("CONCAT(',', specialist, ',') LIKE '%,$specialist,%'")
+            ->having('distance', '<', $radius)
+            ->orderBy('distance')
+            ->get(); */
+
+            $doctors = hvr_doctors::selectRaw("
+            id,first_name,last_name,gender,specialist,qualification,expeirence,latitude,longitute,address,profile,profile_photo,profile_status,
             ( 6371 * acos( cos( radians(?) ) *
             cos( radians( latitude ) )
             * cos( radians( longitute ) - radians(?)
@@ -485,6 +501,22 @@ class DoctorController extends Controller
             ->get();
 
             if ($doctors->count() > 0) {
+                    foreach($doctors as $doctor) {
+                        $doctorid =  $doctor['id'];
+                        $customer_id = $request->customer_id;
+                        
+                        $favoriteDoctors = favorite::where('customer_id', $customer_id)
+                        ->where('doctor_id', $doctorid)
+                        ->first();
+
+                        if($favoriteDoctors){
+                            $is_favorite = 1;
+                        } else{
+                            $is_favorite = 0;
+                        }
+                    $doctor['is_favorite'] = $is_favorite;    
+
+                    }
                 $message = 'Retrieved doctors within '. $radius.'km radius.';
             } else {
                 $message = 'No Records Found within '. $radius.'km radius.';
