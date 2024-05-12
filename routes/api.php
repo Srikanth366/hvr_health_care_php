@@ -11,7 +11,8 @@ use App\Http\Controllers\InternationPatientController;
 use App\Http\Controllers\InsuranceRequestsController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\HospitalsController;
-
+use App\Http\Controllers\DiagnositcsController;
+use App\Http\Controllers\PharmacyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,7 +46,7 @@ Route::get("DoctorProfile/{id}",[DoctorController::class,"getDoctorProfile"]);
 
 
 Route::get("ActiveDoctors",[DoctorController::class,"getActivedoctors"]);
-Route::get("InactiveDoctors",[DoctorController::class,"getNotActivedoctors"]);
+//Route::get("InactiveDoctors",[DoctorController::class,"getNotActivedoctors"]);
 //Route::get("DoctorProfile/{id}",[DoctorController::class,"getDoctorProfile"]);
 Route::put("UpdateDoctorstatus",[DoctorController::class,"updateDoctorStatus"]);
 Route::put("DoctorProfileUpdate",[DoctorController::class,"updateDoctorProfile"]);
@@ -122,3 +123,13 @@ Route::post("BookAppointment",[HospitalsController::class,"BookAppointment"]);
 Route::post("AppointmentStatusUpdate",[HospitalsController::class,"ConfirmBookAppointment"]);
 Route::post("ViewAppointments",[HospitalsController::class,"ViewAppointments"]);
 
+
+Route::get("viewdiagnosticlist",[DiagnositcsController::class,"getdiagnosticlist"]);
+Route::get("viewdiagnosticlist/{id}",[DiagnositcsController::class,"getdiagnosticlist"]);
+Route::post("createDiagnostics",[DiagnositcsController::class,"CreateDiagnostics"]);
+Route::put("updateDiagnostics",[DiagnositcsController::class,"updateDiagnosticCenterData"]);
+
+Route::get("viewpharmacylist",[PharmacyController::class,"getpharmacylist"]);
+Route::get("viewpharmacylist/{id}",[PharmacyController::class,"getpharmacylist"]);
+Route::post("CreatePharmacy",[PharmacyController::class,"CreatePharmacy"]);
+Route::put("updatePharmacyData",[PharmacyController::class,"updatePharmacyData"]);

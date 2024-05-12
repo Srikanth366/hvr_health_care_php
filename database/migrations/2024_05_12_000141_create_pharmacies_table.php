@@ -13,8 +13,22 @@ class CreatePharmaciesTable extends Migration
      */
     public function up()
     {
-        Schema::create('pharmacies', function (Blueprint $table) {
+        Schema::create('pharmacy', function (Blueprint $table) {
             $table->id();
+            $table->string('pharmacy_name');
+            $table->string('pharmacist_name');
+            $table->string('gender');
+            $table->string('email');
+            $table->string('mobile');
+            $table->string('Category');
+            $table->string('drug_licence_number');
+            $table->string('experience');
+            $table->longText('profile_description');
+            $table->string('logo');
+            $table->string('latitude');
+            $table->string('longitude');
+            $table->string('registered_address');
+            $table->int('status')->default(1);
             $table->timestamps();
         });
     }
