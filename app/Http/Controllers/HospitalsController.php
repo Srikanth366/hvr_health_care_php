@@ -17,6 +17,8 @@ use App\Models\Specialists;
 use App\Models\hospital;
 use App\Models\appcategoryconfig;
 use App\Models\availability;
+use App\Models\Appointments;
+use App\Models\Appointment_history;
 
 class HospitalsController extends Controller
 {
@@ -307,6 +309,134 @@ class HospitalsController extends Controller
             }catch (\Exception $e) {
                 return $this->apiResponse(false, 'Failed', [], $e->getMessage());
             }
+    }
+
+    public function BookAppointment(Request $request){
+        try {
+
+            $validateUser = Validator::make($request->all(), [
+                'doctor_type' => 'required',
+                'PatientID' => 'required',
+                'DoctorID' => 'required',
+                'AppointmentDate' => 'required',
+                'AppointmentTime' => 'required',
+                'Notes' => 'required'
+            ]);
+
+             if ($validateUser->fails()) {
+                 return response()->json([
+                     'status' => false,
+                     'message' => 'Validation error',
+                     'errors' => implode(', ', $validateUser->errors()->all())
+                 ], 400);
+             }
+             
+             $appoinmentData = Appointments::create([
+                'doctor_type' => $request->doctor_type,
+                'PatientID' => $request->PatientID,
+                'DoctorID' => $request->DoctorID,
+                'AppointmentDate' => $request->AppointmentDate,
+                'AppointmentTime' => $request->AppointmentTime,
+                'Notes' => $request->Notes ? $request->Notes : 'Notes Not Provided.',
+            ]);
+
+            if($appoinmentData){
+            return response()->json([
+            'status' => true,
+            'message' => 'Appointment request received. We will confirm details shortly.',
+            ], 200);  
+
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Something went wrong, Please Try Again!',
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+        }
+    }
+
+    public function ConfirmBookAppointment(Request $request){
+        try {
+
+            $validateUser = Validator::make($request->all(), [
+                'AppointmentID' => 'required',
+                'requested_user_type' => 'required',
+                'notes' => 'required',
+                'Appointment_status' => 'required',
+            ]);
+
+             if ($validateUser->fails()) {
+                 return response()->json([
+                     'status' => false,
+                     'message' => 'Validation error',
+                     'errors' => implode(', ', $validateUser->errors()->all())
+                 ], 400);
+             }
+
+             $appointment = Appointments::find($request->AppointmentID);
+             if (!$appointment) {
+                 return response()->json(['message' => 'Appointment not found'], 404);
+             } else {
+                $appointment->status = $request->Appointment_status;
+                $appointment->save();
+             }
+             
+             $appoinmentData = Appointment_history::create([
+                'AppointmentID' => $request->AppointmentID,
+                'requested_user_type' => $request->requested_user_type,
+                'notes' => $request->notes,
+                'Appointment_status' => $request->Appointment_status
+            ]);
+
+            if($appoinmentData){
+
+                return response()->json([
+                'status' => true,
+                'message' => 'Appointment status updated successfully',
+                ], 200);
+
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Something went wrong, Please Try Again!',
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+        }
+    }
+
+    public function ViewAppointments(Request $request){
+        try {
+
+            $validateUser = Validator::make($request->all(), [
+                'User_id' => 'required',
+                'user_type' => 'required',
+            ]);
+
+             if ($validateUser->fails()) {
+                 return response()->json([
+                     'status' => false,
+                     'message' => 'Validation error',
+                     'errors' => implode(', ', $validateUser->errors()->all())
+                 ], 400);
+             }
+
+             $appointment = Appointments::find($request->AppointmentID);
+
+             if($appointment){
+                return response()->json(['status'=>true, 'message' => 'Success', 'data'=>$appointment], 200);
+             } else {
+                return response()->json(['status'=>false, 'message' => 'Appointment not found'], 404);
+             }
+
+        } catch (\Exception $e) {
+            return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+        }
     }
 
     private function apiResponse($status, $message, $data = [], $error = null)
