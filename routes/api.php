@@ -118,4 +118,7 @@ Route::get("viewhospitallist/{id}",[HospitalsController::class,"gethospitalslist
 Route::put("updatehospitals",[HospitalsController::class,"updatehospitals"]);
 Route::post("Appolintmentslot",[HospitalsController::class,"SetAppointmentslot"]);
 Route::get("viewWorkingHours/{userid}",[HospitalsController::class,"viewWorkingHours"]);
+Route::post("BookAppointment",[HospitalsController::class,"BookAppointment"]);
+Route::post("AppointmentStatusUpdate",[HospitalsController::class,"ConfirmBookAppointment"]);
+Route::post("ViewAppointments",[HospitalsController::class,"ViewAppointments"]);
 
