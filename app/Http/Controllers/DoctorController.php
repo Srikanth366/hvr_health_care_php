@@ -631,19 +631,17 @@ class DoctorController extends Controller
         }
 
         try{
-            $customerData = hvr_doctors::where('email', $request->email)->first();
-            $customer = User::where('email', $request->email)
-                 ->where('id', $customerData->id)
-                 ->first();
-            
-            
+           // $customerData = hvr_doctors::where('email', $request->email)->first();
+            $customer = User::where('email', $request->email)->orderBy('id', 'desc')->first();
+
             if ($customer) {
 
             $randomPassword = generateRandomPassword(10);
             $customer->password = Hash::make($randomPassword);
-            $name = $customerData->first_name.' '.$customerData->last_name;
-            Mail::to($request->email)->send(new OrderShippedMail($randomPassword,$name));
+           // $name = $customerData->first_name.' '.$customerData->last_name;
+            $name = $customer->name;
             $customer->save();
+            Mail::to($request->email)->send(new OrderShippedMail($randomPassword,$name));
 
            /* $Userslogin->password = Hash::make($randomPassword);
             $Userslogin->save(); */
@@ -753,7 +751,7 @@ class DoctorController extends Controller
             ], 422);
         }
 
-        $DoctorData = hvr_doctors::where('id', $request->id)->first();
+        //$DoctorData = hvr_doctors::where('id', $request->id)->first();
         $customer = User::where('id', $request->id)->first();
 
 
@@ -769,8 +767,7 @@ class DoctorController extends Controller
 
         return response()->json([
             'status'=> true,
-            'message' => 'Password updated successfully',
-            'data' => $DoctorData], 200);
+            'message' => 'Password updated successfully'], 200);
 
         }catch (\Exception $e) {
             return response()->json([
