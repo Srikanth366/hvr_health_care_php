@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\Specialists;
 use App\Models\hvr_doctors;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 
 class Doctorspeciality extends Controller
 {
@@ -110,7 +111,7 @@ class Doctorspeciality extends Controller
             'id' => 'required|exists:specialists,id',
             'speciality' => 'required|string|max:255',
             'category' => 'required|string|max:90',
-            'file' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120', // 5MB max size (5120 KB)
+            //'file' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120', // 5MB max size (5120 KB)
         ], [
             'file.required' => 'Please upload an image.',
             'file.image' => 'The file must be an image.',
@@ -127,20 +128,22 @@ class Doctorspeciality extends Controller
         }
 
         try {
-            $result  = $request->file('file')->storePublicly('icons','public');
             $specialist = Specialists::findOrFail($request->id);
             $imagePath = $specialist->icon;
             $specialist->speciality = $request->speciality;
-            $specialist->icon = $result;
+            if ($request->hasFile('file')) {
+                $result  = $request->file('file')->storePublicly('icons','public');
+                $specialist->icon = $result;
+            }
             $specialist->category = $request->category;
             $specialist->updated_at  = date('Y-m-d H:i:s');
             $specialist->save();
 
-            if($specialist){
-                /* $assetUrl = env('ASSET_URL');
-                if (File::exists($assetUrl.$imagePath)) {
-                    File::delete($assetUrl.'/'.$imagePath);
-                } */
+            if($specialist){   
+                if (Storage::disk('public')->exists($imagePath)) {
+                    Storage::disk('public')->delete($imagePath);
+                    //return response()->json(['message' => 'Image deleted successfully!'], 200);
+                }
 
             return response()->json([
                 'status' => true,

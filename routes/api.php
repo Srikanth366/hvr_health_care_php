@@ -13,6 +13,7 @@ use App\Http\Controllers\MasterController;
 use App\Http\Controllers\HospitalsController;
 use App\Http\Controllers\DiagnositcsController;
 use App\Http\Controllers\PharmacyController;
+use App\Http\Controllers\ChatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,13 +49,13 @@ Route::get("DoctorProfile/{id}",[DoctorController::class,"getDoctorProfile"]);
 Route::get("ActiveDoctors",[DoctorController::class,"getActivedoctors"]);
 //Route::get("InactiveDoctors",[DoctorController::class,"getNotActivedoctors"]);
 //Route::get("DoctorProfile/{id}",[DoctorController::class,"getDoctorProfile"]);
-Route::put("UpdateDoctorstatus",[DoctorController::class,"updateDoctorStatus"]);
+Route::put("UpdateDoctorstatus",[DoctorController::class,"updateDoctorStatusData"]);
 Route::put("DoctorProfileUpdate",[DoctorController::class,"updateDoctorProfile"]);
 Route::post("uploadProfile",[DoctorController::class,"UploadProfile"]);
 Route::get('viewprofile',[DoctorController::class,"viewprofile"]);
 
 Route::post("uploaddocuments",[DoctorController::class,"uploadDocuments"]);
-
+Route::delete("deleteDocuments/{id}",[DoctorController::class,"deleteDocuments"]);
 
 //Route::get('DoctorProfile/{id}', [DoctorController::class, 'getDoctorProfile'])->middleware('auth.error.route');
 //Route::get('/error', [ErrorController::class, 'routeError'])->name('error.route');
@@ -133,3 +134,8 @@ Route::get("viewpharmacylist",[PharmacyController::class,"getpharmacylist"]);
 Route::get("viewpharmacylist/{id}",[PharmacyController::class,"getpharmacylist"]);
 Route::post("CreatePharmacy",[PharmacyController::class,"CreatePharmacy"]);
 Route::put("updatePharmacyData",[PharmacyController::class,"updatePharmacyData"]);
+
+/*** Chat  */
+Route::post("RequestForChat",[ChatController::class,"RequestForChat"]);
+Route::post("ApprovedOrRejectChat",[ChatController::class,"ApprovedOrRejectChat"]);
+/**** Chat Ed */

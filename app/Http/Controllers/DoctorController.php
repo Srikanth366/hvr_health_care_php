@@ -22,6 +22,9 @@ use App\Models\hospital;
 use App\Models\Diagnositcs;
 use App\Models\Pharmacy;
 use App\Models\favorite;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
+
  
 
 require_once app_path('helpers.php');
@@ -278,7 +281,7 @@ class DoctorController extends Controller
             }   
     }
 
-    function updateDoctorStatus(Request $request){
+    function updateDoctorStatusData(Request $request){
         
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:users,id',
@@ -296,33 +299,36 @@ class DoctorController extends Controller
 
         try {
 
-            if($$request->role == 'Doctor') {
+            if($request->role == 'Doctor') {
             $doctor = hvr_doctors::findOrFail($request->id);
             $doctor->profile_status = $request->profile_status;
             $doctor->updated_at  = date('Y-m-d H:i:s');
+            $doctor->save();
             } else if($request->role == 'Hospital') {
                 $doctor = hospital::findOrFail($request->id);
                 $doctor->status = $request->profile_status;
+                $doctor->save();
 
             } else if($request->role == 'Diagnositcs') {
                 $doctor = Diagnositcs::findOrFail($request->id);
                 $doctor->status = $request->profile_status;
+                $doctor->save();
 
             } else if($request->role == 'Pharmacy') {
                 $doctor = Pharmacy::findOrFail($request->id);
                 $doctor->status = $request->profile_status;
+                $doctor->save();
 
             } else if($request->role == 'Customer') {
                 $doctor = Customers::findOrFail($request->id);
                 $doctor->status = $request->profile_status;
+                $doctor->save();
             } else {
                 return response()->json([
                     'status' => false,
                     'message' => 'Invalid Data passed, Please try Again!',
                 ], 403);
             }
-
-            $doctor->save();
             return response()->json([
                 'status' => true,
                 'message' => 'Status updated successfully',
@@ -403,6 +409,7 @@ class DoctorController extends Controller
     function UploadProfile(Request $request){
         
         $validator = Validator::make($request->all(), [
+            'id'=> 'required',
             'role' => 'required',
             'file' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120', // 5MB max size (5120 KB)
         ], [
@@ -424,15 +431,19 @@ class DoctorController extends Controller
 
         if($request->role == 'Hospital'){
             $profileData = hospital::find($request->id);
+            $imagePath = $profileData->logo;
+
             if($profileData){
                 $result  = $request->file('file')->storePublicly('ptofilephoto','public');
                 $profileData->logo = $result;
+                $profileData->save();
             } else {
                 return response()->json(['status' => false,'message' => 'Failed, Please Pass Valid data',], 400);
             }
 
         } else if($request->role == 'Doctor'){
             $profileData = hvr_doctors::findOrFail($request->id);
+            $imagePath = $profileData->profile_photo;
             if($profileData){
                 $result  = $request->file('file')->storePublicly('ptofilephoto','public');
                 $profileData->profile_photo = $result;
@@ -442,6 +453,7 @@ class DoctorController extends Controller
             }
         } else if($request->role == 'Diagnositcs'){
             $profileData = Diagnositcs::findOrFail($request->id);
+            $imagePath = $profileData->logo;
             if($profileData){
                 $result  = $request->file('file')->storePublicly('ptofilephoto','public');
                 $profileData->logo = $result;
@@ -451,6 +463,7 @@ class DoctorController extends Controller
             }
         } else if($request->role == 'Customer'){
             $profileData = Customers::findOrFail($request->id);
+            $imagePath = $profileData->profile_photo;
             if($profileData){
                 $result  = $request->file('file')->storePublicly('ptofilephoto','public');
                 $profileData->profile_photo = $result;
@@ -461,6 +474,7 @@ class DoctorController extends Controller
 
         } else if($request->role == 'Pharmacy'){
             $profileData = Pharmacy::findOrFail($request->id);
+            $imagePath = $profileData->logo;
             if($profileData){
                 $result  = $request->file('file')->storePublicly('ptofilephoto','public');
                 $profileData->logo = $result;
@@ -468,8 +482,14 @@ class DoctorController extends Controller
             } else {
                 return response()->json(['status' => false,'message' => 'Failed, Please Pass Valid data',], 400);
             }
+        } else {
+            return response()->json(['status' => false,'message' => 'Failed, please pass valid data',], 400);
         }
 
+        if (Storage::disk('public')->exists($imagePath)) {
+            Storage::disk('public')->delete($imagePath);
+            //return response()->json(['message' => 'Image deleted successfully!'], 200);
+        }
             return response()->json([
                 'status' => true,
                 'message' => 'Profile Picture Updated successfully',
@@ -624,19 +644,17 @@ class DoctorController extends Controller
         }
 
         try{
-            $customerData = hvr_doctors::where('email', $request->email)->first();
-            $customer = User::where('email', $request->email)
-                 ->where('id', $customerData->id)
-                 ->first();
-            
-            
+           // $customerData = hvr_doctors::where('email', $request->email)->first();
+            $customer = User::where('email', $request->email)->orderBy('id', 'desc')->first();
+
             if ($customer) {
 
             $randomPassword = generateRandomPassword(10);
             $customer->password = Hash::make($randomPassword);
-            $name = $customerData->first_name.' '.$customerData->last_name;
-            Mail::to($request->email)->send(new OrderShippedMail($randomPassword,$name));
+           // $name = $customerData->first_name.' '.$customerData->last_name;
+            $name = $customer->name;
             $customer->save();
+            Mail::to($request->email)->send(new OrderShippedMail($randomPassword,$name));
 
            /* $Userslogin->password = Hash::make($randomPassword);
             $Userslogin->save(); */
@@ -746,7 +764,7 @@ class DoctorController extends Controller
             ], 422);
         }
 
-        $DoctorData = hvr_doctors::where('id', $request->id)->first();
+        //$DoctorData = hvr_doctors::where('id', $request->id)->first();
         $customer = User::where('id', $request->id)->first();
 
 
@@ -762,8 +780,7 @@ class DoctorController extends Controller
 
         return response()->json([
             'status'=> true,
-            'message' => 'Password updated successfully',
-            'data' => $DoctorData], 200);
+            'message' => 'Password updated successfully'], 200);
 
         }catch (\Exception $e) {
             return response()->json([
@@ -822,6 +839,8 @@ class DoctorController extends Controller
                 'file.url' => 'Please enter a valid URL.',
                 'file.regex' => 'Please enter a valid YouTube video URL.'
             ]); 
+        } else {
+            return response()->json(['status'=> false,'message' => 'Please share valid data',], 422);
         }
     
         if ($validator->fails()) {
@@ -866,6 +885,39 @@ class DoctorController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'An error occurred while updating the data',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function deleteDocuments($id){
+        try {
+
+            $imageData = upload_images_documents::find($id);
+            
+        if($imageData) {
+                $imagePath = $imageData->document_url;
+                $imageData->delete();
+
+                if (Storage::disk('public')->exists($imagePath)) {
+                    Storage::disk('public')->delete($imagePath);
+                    //return response()->json(['message' => 'Image deleted successfully!'], 200);
+                }
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Record deleted successfully',
+                ], 200);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid Data passed',
+                ], 404);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while deleting the data',
                 'error' => $e->getMessage(),
             ], 500);
         }

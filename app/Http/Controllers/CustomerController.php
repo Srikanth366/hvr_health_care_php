@@ -12,13 +12,13 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderShippedMail;
-use Illuminate\Support\Str;
 use App\Mail\WelcomeEmail;
 use App\Models\hvr_doctors;
 use App\Models\favorite;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Country;
+use Illuminate\Support\Facades\Storage;
 
 require_once app_path('helpers.php');
 
@@ -133,12 +133,16 @@ class CustomerController extends Controller
 
         try {
         $customer = Customers::findOrFail($request->id);
+        $imagePath = $customer->profile_photo;
         $customer->updated_at  = date('Y-m-d H:i:s');
         $result  = $request->file('file')->storePublicly('customerptofile','public');
-
         $customer->profile_photo = $result;
-
         $customer->save();
+
+        if (Storage::disk('public')->exists($imagePath)) {
+            Storage::disk('public')->delete($imagePath);
+            //return response()->json(['message' => 'Image deleted successfully!'], 200);
+        }
             return response()->json([
                 'status' => true,
                 'message' => 'Profile Picture Updated successfully',
