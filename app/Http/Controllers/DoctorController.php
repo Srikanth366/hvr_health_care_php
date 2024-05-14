@@ -22,6 +22,9 @@ use App\Models\hospital;
 use App\Models\Diagnositcs;
 use App\Models\Pharmacy;
 use App\Models\favorite;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
+
  
 
 require_once app_path('helpers.php');
@@ -428,6 +431,8 @@ class DoctorController extends Controller
 
         if($request->role == 'Hospital'){
             $profileData = hospital::find($request->id);
+            $imagePath = $profileData->logo;
+
             if($profileData){
                 $result  = $request->file('file')->storePublicly('ptofilephoto','public');
                 $profileData->logo = $result;
@@ -438,6 +443,7 @@ class DoctorController extends Controller
 
         } else if($request->role == 'Doctor'){
             $profileData = hvr_doctors::findOrFail($request->id);
+            $imagePath = $profileData->profile_photo;
             if($profileData){
                 $result  = $request->file('file')->storePublicly('ptofilephoto','public');
                 $profileData->profile_photo = $result;
@@ -447,6 +453,7 @@ class DoctorController extends Controller
             }
         } else if($request->role == 'Diagnositcs'){
             $profileData = Diagnositcs::findOrFail($request->id);
+            $imagePath = $profileData->logo;
             if($profileData){
                 $result  = $request->file('file')->storePublicly('ptofilephoto','public');
                 $profileData->logo = $result;
@@ -456,6 +463,7 @@ class DoctorController extends Controller
             }
         } else if($request->role == 'Customer'){
             $profileData = Customers::findOrFail($request->id);
+            $imagePath = $profileData->profile_photo;
             if($profileData){
                 $result  = $request->file('file')->storePublicly('ptofilephoto','public');
                 $profileData->profile_photo = $result;
@@ -466,6 +474,7 @@ class DoctorController extends Controller
 
         } else if($request->role == 'Pharmacy'){
             $profileData = Pharmacy::findOrFail($request->id);
+            $imagePath = $profileData->logo;
             if($profileData){
                 $result  = $request->file('file')->storePublicly('ptofilephoto','public');
                 $profileData->logo = $result;
@@ -477,6 +486,10 @@ class DoctorController extends Controller
             return response()->json(['status' => false,'message' => 'Failed, please pass valid data',], 400);
         }
 
+        if (Storage::disk('public')->exists($imagePath)) {
+            Storage::disk('public')->delete($imagePath);
+            //return response()->json(['message' => 'Image deleted successfully!'], 200);
+        }
             return response()->json([
                 'status' => true,
                 'message' => 'Profile Picture Updated successfully',
@@ -872,6 +885,39 @@ class DoctorController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'An error occurred while updating the data',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function deleteDocuments($id){
+        try {
+
+            $imageData = upload_images_documents::find($id);
+            
+        if($imageData) {
+                $imagePath = $imageData->document_url;
+                $imageData->delete();
+
+                if (Storage::disk('public')->exists($imagePath)) {
+                    Storage::disk('public')->delete($imagePath);
+                    //return response()->json(['message' => 'Image deleted successfully!'], 200);
+                }
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Record deleted successfully',
+                ], 200);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid Data passed',
+                ], 404);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while deleting the data',
                 'error' => $e->getMessage(),
             ], 500);
         }
