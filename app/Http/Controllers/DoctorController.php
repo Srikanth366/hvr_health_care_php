@@ -278,7 +278,7 @@ class DoctorController extends Controller
             }   
     }
 
-    function updateDoctorStatus(Request $request){
+    function updateDoctorStatusData(Request $request){
         
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:users,id',
@@ -296,33 +296,36 @@ class DoctorController extends Controller
 
         try {
 
-            if($$request->role == 'Doctor') {
+            if($request->role == 'Doctor') {
             $doctor = hvr_doctors::findOrFail($request->id);
             $doctor->profile_status = $request->profile_status;
             $doctor->updated_at  = date('Y-m-d H:i:s');
+            $doctor->save();
             } else if($request->role == 'Hospital') {
                 $doctor = hospital::findOrFail($request->id);
                 $doctor->status = $request->profile_status;
+                $doctor->save();
 
             } else if($request->role == 'Diagnositcs') {
                 $doctor = Diagnositcs::findOrFail($request->id);
                 $doctor->status = $request->profile_status;
+                $doctor->save();
 
             } else if($request->role == 'Pharmacy') {
                 $doctor = Pharmacy::findOrFail($request->id);
                 $doctor->status = $request->profile_status;
+                $doctor->save();
 
             } else if($request->role == 'Customer') {
                 $doctor = Customers::findOrFail($request->id);
                 $doctor->status = $request->profile_status;
+                $doctor->save();
             } else {
                 return response()->json([
                     'status' => false,
                     'message' => 'Invalid Data passed, Please try Again!',
                 ], 403);
             }
-
-            $doctor->save();
             return response()->json([
                 'status' => true,
                 'message' => 'Status updated successfully',
@@ -403,6 +406,7 @@ class DoctorController extends Controller
     function UploadProfile(Request $request){
         
         $validator = Validator::make($request->all(), [
+            'id'=> 'required',
             'role' => 'required',
             'file' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120', // 5MB max size (5120 KB)
         ], [
@@ -427,6 +431,7 @@ class DoctorController extends Controller
             if($profileData){
                 $result  = $request->file('file')->storePublicly('ptofilephoto','public');
                 $profileData->logo = $result;
+                $profileData->save();
             } else {
                 return response()->json(['status' => false,'message' => 'Failed, Please Pass Valid data',], 400);
             }
@@ -468,6 +473,8 @@ class DoctorController extends Controller
             } else {
                 return response()->json(['status' => false,'message' => 'Failed, Please Pass Valid data',], 400);
             }
+        } else {
+            return response()->json(['status' => false,'message' => 'Failed, please pass valid data',], 400);
         }
 
             return response()->json([
@@ -822,6 +829,8 @@ class DoctorController extends Controller
                 'file.url' => 'Please enter a valid URL.',
                 'file.regex' => 'Please enter a valid YouTube video URL.'
             ]); 
+        } else {
+            return response()->json(['status'=> false,'message' => 'Please share valid data',], 422);
         }
     
         if ($validator->fails()) {
