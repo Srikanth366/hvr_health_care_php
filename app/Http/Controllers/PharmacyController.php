@@ -45,6 +45,7 @@ class PharmacyController extends Controller
                      $categoryIds = explode(',', $appconfig);
                      $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
                      $Diagnositcs['specialities'] = implode(', ', $specialityNames);
+                     $Diagnositcs['WorkingHours'] = availability::where('user_id', $id)->get();
                  }
              
            }

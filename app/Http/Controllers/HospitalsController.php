@@ -75,6 +75,7 @@ class HospitalsController extends Controller
                     $categoryIds = explode(',', $appconfig);
                     $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
                     $hospitals['specialities'] = implode(', ', $specialityNames);
+                    $hospitals['WorkingHours'] = availability::where('user_id', $id)->get();
                 }
             
           }
