@@ -117,12 +117,15 @@ Route::get("getMasterData",[MasterController::class,"getMasterData"]);
 Route::post("createhospitals",[HospitalsController::class,"createhospitals"]);
 Route::get("viewhospitallist",[HospitalsController::class,"gethospitalslist"]);
 Route::get("viewhospitallist/{id}",[HospitalsController::class,"gethospitalslist"]);
+Route::post("SpecialityWiseAllUsersdata",[HospitalsController::class,"GetSpecialityWiseAllUsersdata"]);
 Route::put("updatehospitals",[HospitalsController::class,"updatehospitals"]);
-Route::post("Appolintmentslot",[HospitalsController::class,"SetAppointmentslot"]);
+Route::post("CreateWorkingHours",[HospitalsController::class,"SetWorkingHours"]);
 Route::get("viewWorkingHours/{userid}",[HospitalsController::class,"viewWorkingHours"]);
+Route::delete("deleteWorkingHours/{id}",[HospitalsController::class,"DeleteWorkingHours"]);
 Route::post("BookAppointment",[HospitalsController::class,"BookAppointment"]);
 Route::post("AppointmentStatusUpdate",[HospitalsController::class,"ConfirmBookAppointment"]);
-Route::post("ViewAppointments",[HospitalsController::class,"ViewAppointments"]);
+Route::post("DoctorAppointments",[HospitalsController::class,"ViewAppointmentsForDoctor"]);
+Route::post("CustomerAppointments",[HospitalsController::class,"ViewAppointmentsToCustomer"]);
 
 
 Route::get("viewdiagnosticlist",[DiagnositcsController::class,"getdiagnosticlist"]);
