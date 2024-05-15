@@ -284,7 +284,7 @@ class HospitalsController extends Controller
         }
     }
 
-    public function SetAppointmentslot(Request $request){
+    public function SetWorkingHours(Request $request){
         try {
 
             $validateUser = Validator::make($request->all(), [
@@ -450,12 +450,11 @@ class HospitalsController extends Controller
         }
     }
 
-    public function ViewAppointments(Request $request){
+    public function ViewAppointmentsForDoctor(Request $request){
         try {
 
             $validateUser = Validator::make($request->all(), [
-                'User_id' => 'required',
-                'user_type' => 'required',
+                'user_id' => 'required'
             ]);
 
              if ($validateUser->fails()) {
@@ -466,7 +465,17 @@ class HospitalsController extends Controller
                  ], 400);
              }
 
-             $appointment = Appointments::find($request->AppointmentID);
+            
+            /* $appointment = Appointments::where('DoctorID', $request->user_id)
+                                     ->where('doctor_type', $request->user_type)
+                                     ->orderBy('id', 'desc')
+                                     ->get(); */
+
+                $appointment = Appointments::where('DoctorID', $request->user_id)
+                ->join('customer', 'appointments.PatientID', '=', 'customer.id')
+                ->orderBy('appointments.id', 'desc')
+                ->get(['appointments.*','customer.first_name', 'customer.last_name' ,'customer.email']);
+
 
              if($appointment){
                 return response()->json(['status'=>true, 'message' => 'Success', 'data'=>$appointment], 200);
@@ -479,14 +488,45 @@ class HospitalsController extends Controller
         }
     }
 
-    public function GlobalStatusUpdate(Request $request){
+    public function ViewAppointmentsToCustomer(Request $request){
+        try{
+            $validateUser = Validator::make($request->all(), [
+                'user_id' => 'required'
+            ]);
+
+             if ($validateUser->fails()) {
+                 return response()->json([
+                     'status' => false,
+                     'message' => 'Validation error',
+                     'errors' => implode(', ', $validateUser->errors()->all())
+                 ], 400);
+             }
+
+                $appointment = Appointments::where('PatientID', $request->user_id)
+                ->join('users', 'appointments.PatientID', '=', 'users.id')
+                ->orderBy('appointments.id', 'desc')
+                ->get(['appointments.*','users.name' ,'users.email','users.roles']);
+
+
+             if($appointment){
+                return response()->json(['status'=>true, 'message' => 'Success', 'data'=>$appointment], 200);
+             } else {
+                return response()->json(['status'=>false, 'message' => 'Appointment not found'], 404);
+             }
+        }    
+        catch (\Exception $e) {
+            return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+        }
+    }
+
+    /* public function GlobalStatusUpdate(Request $request){
         try{
                 
         }    
         catch (\Exception $e) {
             return $this->apiResponse(false, 'Failed', [], $e->getMessage());
         }
-    }
+    } */
 
     private function apiResponse($status, $message, $data = [], $error = null)
     {
