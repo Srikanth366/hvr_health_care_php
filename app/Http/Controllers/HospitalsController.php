@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\hvr_doctors;
+use App\Models\Pharmacy;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -19,6 +21,7 @@ use App\Models\appcategoryconfig;
 use App\Models\availability;
 use App\Models\Appointments;
 use App\Models\Appointment_history;
+use App\Models\Diagnositcs;
 
 class HospitalsController extends Controller
 {
@@ -81,6 +84,79 @@ class HospitalsController extends Controller
             } */
 
             return $this->apiResponse(true, 'Success', $hospitals);
+            }catch (\Exception $e) {
+                return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+            }
+    }
+    function GetSpecialityWiseAllUsersdata(Request $request){
+        try {
+            
+            $validateUser = Validator::make($request->all(), [
+               'speciality_id' => 'required',
+               'user_role' => 'required'
+            ]);
+
+            if ($validateUser->fails()) {
+                
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Validation error',
+                    'errors' => implode(', ', $validateUser->errors()->all())
+                ], 400);
+            }
+
+            $role = $request->user_role;
+
+           if($request->speciality_id == 0){
+
+                if($role == 'Doctor'){
+                    $data = hvr_doctors::where('profile_status', 1)->get();
+                } else if($role == 'Hospital'){
+                    $data = hospital::where('status', 1)->get();
+                } else if($role == 'Diagnositcs'){
+                    $data = Diagnositcs::where('status', 1)->get();
+                } else if($role == 'Pharmacy'){
+                    $data = Pharmacy::where('status', 1)->get();
+                } else {
+                    return $this->apiResponse(false, 'The data provided is invalid.', []);
+                }
+                return $this->apiResponse(true, 'Success', $data);
+                /* $data = ['Doctor' => $doctors, 
+                            'Hospital' => $hospital, 
+                            'Diagnositcs' => $Diagnositcs, 
+                            'Pharmacy' => $Pharmacy]; */ 
+                
+           } else {
+                
+            if($role == 'Hospital'){
+                    $data = hospital::join('appcategoryconfigs', 'hospitals.id', '=', 'appcategoryconfigs.user_id')
+                    ->where('hospitals.status', 1)
+                    ->where('appcategoryconfigs.category_id', $request->speciality_id)
+                    ->select('hospitals.*')
+                    ->get();
+            } else if($role == 'Diagnositcs'){
+                $data = Diagnositcs::join('appcategoryconfigs', 'diagnositcs.id', '=', 'appcategoryconfigs.user_id')
+                    ->where('diagnositcs.status', 1)
+                    ->where('appcategoryconfigs.category_id', $request->speciality_id)
+                    ->select('diagnositcs.*')
+                    ->get();
+            } else if($role == 'Pharmacy'){
+                $data = Pharmacy::join('appcategoryconfigs', 'pharmacy.id', '=', 'appcategoryconfigs.user_id')
+                    ->where('pharmacy.status', 1)
+                    ->where('appcategoryconfigs.category_id', $request->speciality_id)
+                    ->select('pharmacy.*')
+                    ->get();
+            } else {
+                return $this->apiResponse(false, 'The data provided is invalid.', []);
+            }
+
+            if ($data->isEmpty()) {
+                return $this->apiResponse(false, 'No matching data found.', []);
+            } else {
+                return $this->apiResponse(true, 'Success', $data);
+            }
+        }
+
             }catch (\Exception $e) {
                 return $this->apiResponse(false, 'Failed', [], $e->getMessage());
             }
@@ -314,7 +390,7 @@ class HospitalsController extends Controller
             if($hospitalWorkingHours){
             return response()->json([
             'status' => true,
-            'message' => 'Working Hours Updated Successfully',
+            'message' => 'Working Hours Added Successfully',
             ], 200);  
 
             } else {
@@ -338,12 +414,31 @@ class HospitalsController extends Controller
                 $hospitalWorkingHours = availability::where('user_id', $id)->get();
 
                 if ($hospitalWorkingHours->isEmpty()) {
-                    return $this->apiResponse(true, 'No Data found.', []);
+                    return $this->apiResponse(false, 'No Data found.', []);
                 }
 
-                return $this->apiResponse(true, 'Success', $hospitalWorkingHours);
+                return $this->apiResponse(true, 'Working hours deleted successfully.', []);
             } else {
                 return $this->apiResponse(false, 'Please pass valid data', []);
+            }
+
+            }catch (\Exception $e) {
+                return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+            }
+    }
+
+    public function DeleteWorkingHours($id){
+        try {
+            if($id){
+                $hospitalWorkingHours = availability::find($id);
+
+                if (!$hospitalWorkingHours) {
+                    return $this->apiResponse(false, 'Failed, Please try again', []);
+                }
+                $hospitalWorkingHours->delete();
+                return $this->apiResponse(true, 'Success', $hospitalWorkingHours);
+            } else {
+                return $this->apiResponse(false, 'Unauthorized Access', []);
             }
 
             }catch (\Exception $e) {
