@@ -46,15 +46,18 @@ class DiagnositcsController extends Controller
                      $categoryIds = explode(',', $appconfig);
                      $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
                      $Diagnositcs['specialities'] = implode(', ', $specialityNames);
-                     $Diagnositcs['WorkingHours'] = availability::where('user_id', $id)->get();
+                     $WorkingHours = availability::where('user_id', $id)->get();
                  }
              
            }
-             /* if ($hospitals->isEmpty()) {
-                 return $this->apiResponse(false, 'No Data found.', []);
-             } */
+             
+           return $response = [
+            'status' => true,
+            'message' => 'Success',
+            'data' => $Diagnositcs,
+            'WorkingHours' => $WorkingHours];
  
-             return $this->apiResponse(true, 'Success', $Diagnositcs);
+            // return $this->apiResponse(true, 'Success', $Diagnositcs);
              }catch (\Exception $e) {
                  return $this->apiResponse(false, 'Failed', [], $e->getMessage());
              }
