@@ -65,6 +65,7 @@ class HospitalsController extends Controller
                     $categoryIds = explode(',', $appconfig);
                     $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
                     $hospital['specialities'] = implode(', ', $specialityNames);
+                    $WorkingHours = "";
                 }
            } else {
                 $hospitals = hospital::where('id', $id)->first();

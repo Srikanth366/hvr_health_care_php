@@ -13,7 +13,7 @@ class InternationPatientController extends Controller
         try {
                 $list = internationalpatient::orderByDesc('id')->get();
                 if (!$list) {
-                    return $this->apiResponse(true, 'No Data found', []);
+                    return $this->apiResponse(false, 'No Data found', []);
                 }else {
                     return $this->apiResponse(true, 'Success', $list);
                 }
@@ -33,7 +33,8 @@ class InternationPatientController extends Controller
                'country' => 'required',
                'mobile_code' => 'required',
                'mobile' => 'required',
-               'service_request' => 'required'
+               'service_request' => 'required',
+               'customer_id' => 'required'
             ]);
 
             if ($validateUser->fails()) {
@@ -53,6 +54,7 @@ class InternationPatientController extends Controller
                'mobile_code' => $request->mobile_code,
                'country' => $request->country,
                'service_request'=> $request->service_request,
+               'customer_id' => $request->customer_id
            ]);
            
            if ($user) {
@@ -73,6 +75,31 @@ class InternationPatientController extends Controller
                 'message' => $th->getMessage()
             ], 500);
         }
+    }
+    public function GetMyInternationRequests($id){
+        try {
+                $list = internationalpatient::where('customer_id', $id)->get();
+                if ($list->count() == 0) {
+                    return $this->apiResponse(false, 'No Data found', []);
+                }else {
+                    return $this->apiResponse(true, 'Success', $list);
+                }
+            }catch (\Exception $e) {
+                return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+            }   
+    }
+
+    public function GetMyInternationRequestDetails($id){
+        try {
+                $list = internationalpatient::where('id', $id)->get();
+                if ($list->count() == 0) {
+                    return $this->apiResponse(false, 'No Data found', []);
+                }else {
+                    return $this->apiResponse(true, 'Success', $list);
+                }
+            }catch (\Exception $e) {
+                return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+            }   
     }
 
     private function apiResponse($status, $message, $data = [], $error = null)

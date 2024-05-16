@@ -594,7 +594,7 @@ class DoctorController extends Controller
                     }
                 $message = 'Retrieved doctors within '. $radius.'km radius.';
             } else {
-                $message = 'No Records Found within '. $radius.'km radius.';
+                $message = 'No Active Doctors Found within '. $radius.'km radius.';
             }    
 
             return response()->json([

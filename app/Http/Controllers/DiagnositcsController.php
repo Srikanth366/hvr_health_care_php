@@ -36,6 +36,7 @@ class DiagnositcsController extends Controller
                      $categoryIds = explode(',', $appconfig);
                      $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
                      $Diagnositc['specialities'] = implode(', ', $specialityNames);
+                     $WorkingHours = "";
                  }
             } else {
                  $Diagnositcs = Diagnositcs::where('id', $id)->first();

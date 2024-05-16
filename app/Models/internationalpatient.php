@@ -16,7 +16,7 @@ class internationalpatient extends Model
 
     protected $unique = [''];
 
-    protected $fillable   = ['name','gender','email','country','mobile_code','mobile','service_request'];
+    protected $fillable   = ['name','gender','email','country','mobile_code','mobile','service_request','customer_id'];
 
     protected $hidden = [''];
        
