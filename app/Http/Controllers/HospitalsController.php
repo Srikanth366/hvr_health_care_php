@@ -577,7 +577,7 @@ class HospitalsController extends Controller
                 $appointment = Appointments::where('DoctorID', $request->user_id)
                 ->join('customer', 'appointments.PatientID', '=', 'customer.id')
                 ->orderBy('appointments.id', 'desc')
-                ->get(['appointments.*','customer.*']);
+                ->get(['appointments.*','customer.id','customer.first_name','customer.last_name','customer.email','customer.mobile_number','customer.profile_photo','customer.gender']);
 
 
              if($appointment){
