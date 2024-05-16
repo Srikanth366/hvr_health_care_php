@@ -459,7 +459,9 @@ class HospitalsController extends Controller
                 'DoctorID' => 'required',
                 'AppointmentDate' => 'required',
                 'AppointmentTime' => 'required',
-                'Notes' => 'required'
+                'Notes' => 'required',
+                'name' => 'required',
+                'age' => 'required',
             ]);
 
              if ($validateUser->fails()) {
@@ -477,6 +479,8 @@ class HospitalsController extends Controller
                 'AppointmentDate' => $request->AppointmentDate,
                 'AppointmentTime' => $request->AppointmentTime,
                 'Notes' => $request->Notes ? $request->Notes : 'Notes Not Provided.',
+                'name' => $request->name,
+                'age' => $request->age,
             ]);
 
             if($appoinmentData){
@@ -573,7 +577,7 @@ class HospitalsController extends Controller
                 $appointment = Appointments::where('DoctorID', $request->user_id)
                 ->join('customer', 'appointments.PatientID', '=', 'customer.id')
                 ->orderBy('appointments.id', 'desc')
-                ->get(['appointments.*','customer.first_name', 'customer.last_name' ,'customer.email']);
+                ->get(['appointments.*','customer.*']);
 
 
              if($appointment){
@@ -601,10 +605,35 @@ class HospitalsController extends Controller
                  ], 400);
              }
 
-                $appointment = Appointments::where('PatientID', $request->user_id)
+               /* $appointment = Appointments::where('PatientID', $request->user_id)
                 ->join('users', 'appointments.PatientID', '=', 'users.id')
                 ->orderBy('appointments.id', 'desc')
-                ->get(['appointments.*','users.name' ,'users.email','users.roles']);
+                ->get(['appointments.*','users.name' ,'users.email','users.roles']); */
+
+                $appointment = Appointments::where('PatientID', $request->user_id)->get();
+                foreach ($appointment as $appointmentData){
+                    $UserID = $appointmentData->DoctorID;
+                    $user_type = $appointmentData->doctor_type;
+
+                    if($user_type == 'Doctor') {
+                        $data = hvr_doctors::where('id', $UserID)->get()->makeHidden(['phone', 'email', 'password','specialist','NMC_Registration_NO']);
+                    } else if($user_type == 'Hospital') {
+                       // $data = hospital::where('status', 1)->get();
+                        $data = hospital::where('id', $UserID)->get()->makeHidden(['hospital_contact_number', 'email', 'password','emergency_number','category','dmho_licence_number']);
+                    } else if($user_type == 'Diagnositcs') {
+                       // $data = Diagnositcs::where('status', 1)->get();
+                        $data = Diagnositcs::where('id', $UserID)->get()->makeHidden(['phone', 'email', 'password','Category','licence_number']);
+                    } else if($user_type == 'Pharmacy') {
+                       // $data = Pharmacy::where('status', 1)->get();
+                        $data = Pharmacy::where('id', $UserID)->get()->makeHidden(['mobile', 'email', 'password','Category','drug_licence_number']);
+                    } else {
+                        $data = "";
+                    }
+
+                    $appointmentData['user_data'] = $data;
+                    //$appointmentData['is_favorite'] = '1';
+                    //$appointmentData['favorite_id'] = '2'; 
+                }
 
 
              if($appointment){
