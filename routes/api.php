@@ -131,6 +131,7 @@ Route::post("BookAppointment",[HospitalsController::class,"BookAppointment"]);
 Route::post("AppointmentStatusUpdate",[HospitalsController::class,"ConfirmBookAppointment"]);
 Route::post("DoctorAppointments",[HospitalsController::class,"ViewAppointmentsForDoctor"]);
 Route::post("CustomerAppointments",[HospitalsController::class,"ViewAppointmentsToCustomer"]);
+Route::get("GetAppointmentHistory/{id}",[HospitalsController::class,"GetAppointmentHistory"]);
 
 
 Route::get("viewdiagnosticlist",[DiagnositcsController::class,"getdiagnosticlist"]);

@@ -591,6 +591,21 @@ class HospitalsController extends Controller
         }
     }
 
+    public function GetAppointmentHistory($AppointmentId){
+        try {
+                $AppointmentHistory = Appointment_history::find($AppointmentId);
+
+                if (!$AppointmentHistory) {
+                    return $this->apiResponse(false, 'No appointment history found.', []);
+                } else {
+                    return $this->apiResponse(true, 'Success', $AppointmentHistory);
+                }
+
+        } catch (\Exception $e) {
+            return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+        }
+    }
+
     public function ViewAppointmentsToCustomer(Request $request){
         try{
             $validateUser = Validator::make($request->all(), [
