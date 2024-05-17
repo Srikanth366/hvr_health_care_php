@@ -13,13 +13,39 @@ class InsuranceRequestsController extends Controller
         try {
             $list = insurance_request::orderByDesc('id')->get();
             if (!$list) {
-                return $this->apiResponse(true, 'No Data found', []);
+                return $this->apiResponse(false, 'No Data found', []);
             }else {
                 return $this->apiResponse(true, 'Success', $list);
             }
         }catch (\Exception $e) {
             return $this->apiResponse(false, 'Failed', [], $e->getMessage());
         }  
+    }
+
+    public function GetMyInsuranceRequests($id){
+        try {
+                $list = insurance_request::where('customer_id', $id)->get();
+                if ($list->count() == 0) {
+                    return $this->apiResponse(false, 'No Data found', []);
+                }else {
+                    return $this->apiResponse(true, 'Success', $list);
+                }
+            }catch (\Exception $e) {
+                return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+            }   
+    }
+
+    public function GetInsuranceRequestDetails($id){
+        try {
+                $list = insurance_request::where('id', $id)->get();
+                if ($list->count() == 0) {
+                    return $this->apiResponse(false, 'No Data found', []);
+                }else {
+                    return $this->apiResponse(true, 'Success', $list);
+                }
+            }catch (\Exception $e) {
+                return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+            }   
     }
 
     public function create(Request $request){

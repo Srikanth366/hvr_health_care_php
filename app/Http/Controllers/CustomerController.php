@@ -95,7 +95,7 @@ class CustomerController extends Controller
             Mail::to($request->email)->send(new WelcomeEmail($request->password,$name,$request->email));
                 return response()->json([
                     'status' => true,
-                    'message' => 'Customer Created Successfully',
+                    'message' => 'Customer Registered Successfully',
                     'token' => $user->createToken("API TOKEN")->plainTextToken
                 ], 200);
             }

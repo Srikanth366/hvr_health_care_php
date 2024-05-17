@@ -9,7 +9,7 @@ class Appointments extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['doctor_type','PatientID','DoctorID','AppointmentDate','AppointmentTime','Notes'];
+    protected $fillable = ['doctor_type','PatientID','DoctorID','AppointmentDate','AppointmentTime','Notes','name','age'];
     public $incrementing = false; 
 
     protected $hidden = [];

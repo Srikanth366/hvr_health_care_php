@@ -103,10 +103,15 @@ Route::get("countrylist",[CustomerController::class,"getcountry"]);
 
 Route::post("CreateInternationalPatient",[InternationPatientController::class,"create"]);
 Route::get("ViewInternationalPatient",[InternationPatientController::class,"index"]);
+Route::get("ViewInternationRequestsDetails/{id}",[InternationPatientController::class,"GetMyInternationRequestDetails"]);
+Route::get("ViewMyInternationRequests/{id}",[InternationPatientController::class,"GetMyInternationRequests"]);
+
 
 
 Route::post("CreateInsuranceRequest",[InsuranceRequestsController::class,"create"]);
 Route::get("ViewInsuranceRequest",[InsuranceRequestsController::class,"index"]);
+Route::get("ViewInsuranceDetails/{id}",[InsuranceRequestsController::class,"GetInsuranceRequestDetails"]);
+Route::get("ViewMyInsuranceRequetedlist/{id}",[InsuranceRequestsController::class,"GetMyInsuranceRequests"]);
 
 
 Route::post("addMaster",[MasterController::class,"addMaster"]);
@@ -126,6 +131,7 @@ Route::post("BookAppointment",[HospitalsController::class,"BookAppointment"]);
 Route::post("AppointmentStatusUpdate",[HospitalsController::class,"ConfirmBookAppointment"]);
 Route::post("DoctorAppointments",[HospitalsController::class,"ViewAppointmentsForDoctor"]);
 Route::post("CustomerAppointments",[HospitalsController::class,"ViewAppointmentsToCustomer"]);
+Route::get("GetAppointmentHistory/{id}",[HospitalsController::class,"GetAppointmentHistory"]);
 
 
 Route::get("viewdiagnosticlist",[DiagnositcsController::class,"getdiagnosticlist"]);
