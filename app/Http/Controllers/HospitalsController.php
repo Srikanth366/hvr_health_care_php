@@ -630,24 +630,46 @@ class HospitalsController extends Controller
                     $UserID = $appointmentData->DoctorID;
                     $user_type = $appointmentData->doctor_type;
 
-                    if($user_type == 'Doctor') {
+                   /* if($user_type == 'Doctor') {
                         $data = hvr_doctors::where('id', $UserID)->get()->makeHidden(['phone', 'email', 'password','specialist','NMC_Registration_NO']);
                     } else if($user_type == 'Hospital') {
-                       // $data = hospital::where('status', 1)->get();
                         $data = hospital::where('id', $UserID)->get()->makeHidden(['hospital_contact_number', 'email', 'password','emergency_number','category','dmho_licence_number']);
                     } else if($user_type == 'Diagnositcs') {
-                       // $data = Diagnositcs::where('status', 1)->get();
                         $data = Diagnositcs::where('id', $UserID)->get()->makeHidden(['phone', 'email', 'password','Category','licence_number']);
                     } else if($user_type == 'Pharmacy') {
-                       // $data = Pharmacy::where('status', 1)->get();
                         $data = Pharmacy::where('id', $UserID)->get()->makeHidden(['mobile', 'email', 'password','Category','drug_licence_number']);
                     } else {
-                        $data = "";
+                        $data = [];
+                    } */
+
+                    if($user_type == 'Doctor') {
+                        $data = hvr_doctors::select('id as DoctorsID','first_name', 'last_name', 'latitude', 'longitute as longitude', 'address', 'profile_photo as logo')
+                        ->where('id', $UserID)
+                        ->first();
+                    } else if($user_type == 'Hospital') {
+                        $data = hospital::select('id as DoctorsID','hospital_name as first_name',  DB::raw("' ' as last_name"), 'latitude', 'longitude', 'registered_address as address', 'logo')
+                        ->where('id', $UserID)
+                        ->first();
+                    } else if($user_type == 'Diagnositcs') {
+                        $data = Diagnositcs::select('id as DoctorsID','diagnostics_name as first_name', DB::raw("' ' as last_name"), 'latitude', 'longitude', 'registered_address as address', 'logo')
+                        ->where('id', $UserID)
+                        ->first();
+                    } else if($user_type == 'Pharmacy') {
+                        $data = Pharmacy::select('id as DoctorsID','pharmacy_name as first_name', DB::raw("' ' as last_name"), 'latitude', 'longitude', 'registered_address as address', 'logo')
+                        ->where('id', $UserID)
+                        ->first();
+                    } else {
+                        $data = [];
                     }
 
-                    $appointmentData['user_data'] = $data;
-                    //$appointmentData['is_favorite'] = '1';
-                    //$appointmentData['favorite_id'] = '2'; 
+                    //$appointmentData['user_data'] = $data;
+                    $appointmentData['doc_id'] = $data->DoctorsID;
+                    $appointmentData['doc_name'] = $data->first_name.' '.$data->last_name;
+                    $appointmentData['doc_latitude'] = $data->latitude;
+                    $appointmentData['doc_longitude'] = $data->longitude;
+                    $appointmentData['doc_address'] = $data->address;
+                    $appointmentData['doc_logo'] = $data->logo;
+                    $appointmentData['doc_role'] = $user_type;
                 }
 
 
