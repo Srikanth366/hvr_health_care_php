@@ -14,6 +14,7 @@ use App\Http\Controllers\HospitalsController;
 use App\Http\Controllers\DiagnositcsController;
 use App\Http\Controllers\PharmacyController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\WorkingHourController;
 
 /*
 |--------------------------------------------------------------------------
@@ -74,6 +75,7 @@ Route::get("speciality",[Doctorspeciality::class,"getdoctorspeciality"]);
 Route::post("createdoctor",[DoctorController::class,"createUser"]);
 Route::post("logindoctor",[DoctorController::class,"loginUser"]);
 Route::post("doctorToken",[UserController::class,"generateToken"]);
+Route::put("SetFirebaseToken",[DoctorController::class,"UpdateFirebaseToken"]);
 
 Route::post("UserToken",[UserController::class,"generateToken"]);
 Route::post("login",[UserController::class,'index']);
@@ -148,3 +150,10 @@ Route::put("updatePharmacyData",[PharmacyController::class,"updatePharmacyData"]
 Route::post("RequestForChat",[ChatController::class,"RequestForChat"]);
 Route::post("ApprovedOrRejectChat",[ChatController::class,"ApprovedOrRejectChat"]);
 /**** Chat Ed */
+
+/** Set Working Hours */
+Route::post("SetWorkingHours",[WorkingHourController::class,"store"]);
+Route::delete("DeleteWorkingHours/{id}",[WorkingHourController::class,"destroy"]);
+Route::get("GetWorkingHours/{id}",[WorkingHourController::class,"GetWorkingHours"]);
+Route::post("GetAppointmentslots",[WorkingHourController::class,"GetAppointmentslots"]);
+/** Set Working Hours End */

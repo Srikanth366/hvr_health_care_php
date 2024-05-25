@@ -96,7 +96,5 @@ class UserController extends Controller
             'data' => $customer], 200);
     }
 
-    public function CommonloginAllUsers(Request $request){
 
-    }
 }
