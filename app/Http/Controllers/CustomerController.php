@@ -103,8 +103,8 @@ class CustomerController extends Controller
 $notificationTitle = "Registration Alert";
 $notificationBody = "A New User Just Registered with us";
 $role = "User Registration";
-$userId = "32";
-$firebaseUserId = "q55qcFxbwjcNjpbvBSywhedxDyw1";
+$userId = ".$newinsertingId.";
+//$firebaseUserId = "q55qcFxbwjcNjpbvBSywhedxDyw1";
 $type = "profile";
 $androidTitle = "Dear ".$unames." Great News!";
 $androidBody = "A New User Just Registered with us";
