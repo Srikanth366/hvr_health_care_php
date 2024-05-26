@@ -93,10 +93,20 @@ class WorkingHourController extends Controller
             'id' => 'required|integer|exists:users,id'
         ]);
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 400);
+            return response()->json([
+                'status' => false,
+                'message' => 'Success',
+                'errors' => implode(', ', $validator->errors()->all())
+            ], 400);
         }
         $workingHours = WorkingHour::where('user_id', $id)->get();
-        return response()->json($workingHours);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Success',
+            'data' => $workingHours
+        ], 200);
+
     }
 
     public function GetAppointmentslots(Request $request)

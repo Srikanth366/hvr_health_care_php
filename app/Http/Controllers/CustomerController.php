@@ -21,12 +21,62 @@ use App\Models\Country;
 use Illuminate\Support\Facades\Storage;
 use App\Models\PushNotification;
 
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+//require_once 'vendor/autoload.php'; 
 require_once app_path('helpers.php');
 
 class CustomerController extends Controller
 {
 
+    function generateFCMToken($serviceAccountPath)
+{
+    // Load the service account JSON file
+    $serviceAccount = json_decode(file_get_contents($serviceAccountPath), true);
+
+    $now_seconds = time();
+    $exp_seconds = $now_seconds + (60 * 60); // Token valid for 1 hour
+
+    // Create the payload
+    $payload = array(
+        "iss" => $serviceAccount['client_email'],
+        "sub" => $serviceAccount['client_email'],
+        "aud" => "https://oauth2.googleapis.com/token",
+        "iat" => $now_seconds,
+        "exp" => $exp_seconds,
+        "scope" => "https://www.googleapis.com/auth/firebase.messaging"
+    );
+
+    // Encode the JWT
+    $jwt = JWT::encode($payload, $serviceAccount['private_key'], 'RS256');
+
+    // Get the OAuth 2.0 token
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, 'https://oauth2.googleapis.com/token');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        'assertion' => $jwt
+    ]));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/x-www-form-urlencoded'
+    ]);
+
+    $result = curl_exec($ch);
+    if (curl_errno($ch)) {
+        echo 'Error:' . curl_error($ch);
+    }
+    curl_close($ch);
+
+    $response = json_decode($result, true);
+    return $response['access_token'];
+}
+
     public function SendPushNotification($newinsertingId,$role){
+
+        $serviceAccountPath = env('FirebasePAth');
+        $authBearerToken = $this->generateFCMToken($serviceAccountPath);
 
         $adminUsers = User::where('roles', 'Admin')->get();
         $user = User::find($newinsertingId);
@@ -45,20 +95,59 @@ class CustomerController extends Controller
                 $unames = $admins->name;
                 $FbUserID = $admins->FbUserID;
                 $FbToken = $admins->FbToken;
-                $FBAuth = 'Bearer '.$admins->FBAuth;
+                $FBAuth = 'Bearer '.$authBearerToken;
 
                 $ptitle = "Dear ".$unames." Great News!";
                 $pmessage = "A New User Just Registered with us";
 
-                $data = [
-                    "message" => [
-                        "notification" => [
-                            "title" => $ptitle,
-                            "body" => $pmessage
-                        ],
-                        "token" => $FbToken
-                    ]
-                ];
+$notificationTitle = "Registration Alert";
+$notificationBody = "A New User Just Registered with us";
+$role = "User Registration";
+$userId = "32";
+$firebaseUserId = "q55qcFxbwjcNjpbvBSywhedxDyw1";
+$type = "profile";
+$androidTitle = "Dear ".$unames." Great News!";
+$androidBody = "A New User Just Registered with us";
+$androidSound = "default";
+$apnsSound = "default";
+$apnsPriority = "5";
+
+// Construct the associative array
+$data = [
+    "message" => [
+        "token" => $FbToken,
+        "notification" => [
+            "title" => $notificationTitle,
+            "body" => $notificationBody,
+        ],
+        "data" => [
+            "role" => $role,
+            "userId" => $userId,
+            "firebaseUserId" => $firebaseUserId,
+            "type" => $type,
+        ],
+        "android" => [
+            "priority" => "high",
+            "notification" => [
+                "title" => $androidTitle,
+                "body" => $androidBody,
+                "sound" => $androidSound,
+            ],
+        ],
+        "apns" => [
+            "payload" => [
+                "aps" => [
+                    "sound" => $apnsSound,
+                    "content-available" => 1,
+                ],
+            ],
+            "headers" => [
+                "apns-priority" => $apnsPriority,
+            ],
+        ],
+    ],
+];
+                
                 $curl = curl_init();
                 curl_setopt_array($curl, array(
                     CURLOPT_URL => 'https://fcm.googleapis.com/v1/projects/' . $FMProjetID . '/messages:send',
