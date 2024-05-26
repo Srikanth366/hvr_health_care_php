@@ -559,7 +559,7 @@ class DoctorController extends Controller
             ->get(); */
 
             $doctors = hvr_doctors::selectRaw("
-            id,first_name,last_name,gender,specialist,qualification,expeirence,latitude,longitute,address,profile,profile_photo,profile_status,
+            id,first_name,last_name,gender,specialist,qualification,expeirence,latitude,longitute,address,profile,profile_photo,profile_status,firebaseUserId,
             ( 6371 * acos( cos( radians(?) ) *
             cos( radians( latitude ) )
             * cos( radians( longitute ) - radians(?)
@@ -1027,6 +1027,81 @@ class DoctorController extends Controller
             }
         }catch (\Exception $e) {
             User::destroy($newinsertingId);
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while updating the data',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    function UpdateFirebaseToken(Request $request){
+        
+        $validator = Validator::make($request->all(), [
+            'userId' => 'required|exists:users,id',
+            'firebaseUserId' => 'required|string',
+            'firebaseUserToken' => 'required|string',
+            'firebaseAuthId' => 'required|string',
+            'role'=> 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => implode(', ', $validator->errors()->all())
+            ], 422);
+        }
+
+        try {
+
+            $doctor = User::findOrFail($request->userId);
+            $doctor->FbUserID = $request->firebaseUserId;
+            $doctor->FbToken = $request->firebaseUserToken;
+            $doctor->FBAuth = $request->firebaseAuthId;
+            $doctor->updated_at  = date('Y-m-d H:i:s');
+            $doctor->save();
+
+            if($request->role == 'Doctor') {
+            $doctor = hvr_doctors::findOrFail($request->userId);
+            $doctor->firebaseUserId = $request->firebaseUserId;
+            $doctor->updated_at  = date('Y-m-d H:i:s');
+            $doctor->save();
+            } else if($request->role == 'Hospital') {
+                $doctor = hospital::findOrFail($request->userId);
+                $doctor->firebaseUserId = $request->firebaseUserId;
+                $doctor->save();
+
+            } else if($request->role == 'Diagnositcs') {
+                $doctor = Diagnositcs::findOrFail($request->userId);
+                $doctor->firebaseUserId = $request->firebaseUserId;
+                $doctor->save();
+
+            } else if($request->role == 'Pharmacy') {
+                $doctor = Pharmacy::findOrFail($request->userId);
+                $doctor->firebaseUserId = $request->firebaseUserId;
+                $doctor->save();
+
+            } else if($request->role == 'Customer') {
+                $doctor = Customers::findOrFail($request->userId);
+                $doctor->firebaseUserId = $request->firebaseUserId;
+                $doctor->save();
+            } else if($request->role == 'Admin') {
+                $doctor = User::findOrFail($request->userId);
+                $doctor->FbUserID = $request->firebaseUserId;
+                $doctor->save();
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid Data passed, Please try Again!',
+                ], 403);
+            }
+            return response()->json([
+                'status' => true,
+                'message' => 'Status updated successfully',
+                'data' => $doctor,
+            ], 200);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'An error occurred while updating the data',
