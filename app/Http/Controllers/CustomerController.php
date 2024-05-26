@@ -19,11 +19,85 @@ use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Country;
 use Illuminate\Support\Facades\Storage;
+use App\Models\PushNotification;
 
 require_once app_path('helpers.php');
 
 class CustomerController extends Controller
 {
+
+    public function SendPushNotification($newinsertingId,$role){
+
+        $adminUsers = User::where('roles', 'Admin')->get();
+        $user = User::find($newinsertingId);
+        if ($user) {
+            $firebaseUserId = $user->FbUserID;
+        } else {
+            $firebaseUserId = '';
+        }
+
+        if ($adminUsers->isEmpty()) {
+            return response()->json(['message' => 'No admin users found'], 404);
+        } else {
+
+            $FMProjetID = env('ProjetID');
+            foreach($adminUsers as $admins){
+                $unames = $admins->name;
+                $FbUserID = $admins->FbUserID;
+                $FbToken = $admins->FbToken;
+                $FBAuth = 'Bearer '.$admins->FBAuth;
+
+                $ptitle = "Dear ".$unames." Great News!";
+                $pmessage = "A New User Just Registered with us";
+
+                $data = [
+                    "message" => [
+                        "notification" => [
+                            "title" => $ptitle,
+                            "body" => $pmessage
+                        ],
+                        "token" => $FbToken
+                    ]
+                ];
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => 'https://fcm.googleapis.com/v1/projects/' . $FMProjetID . '/messages:send',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_ENCODING => '',
+                    CURLOPT_MAXREDIRS => 10,
+                    CURLOPT_TIMEOUT => 0,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS => json_encode($data),
+                    CURLOPT_HTTPHEADER => array(
+                        'Authorization: ' . $FBAuth,
+                        'Content-Type: application/json'
+                    ),
+                ));
+                
+                $response = curl_exec($curl);
+                
+                curl_close($curl);
+
+               // if($response){
+                    $pushNotification = PushNotification::create([
+                        'title' => $ptitle,
+                        'message' => $pmessage,
+                        'user_id' => $admins->id,
+                        'role' => 'Admin',
+                        'status' => 0,
+                    ]);
+                    /* if ($pushNotification) {
+                        return response()->json(['message' => 'Push notification created successfully!'], 201);
+                    } */
+               // }
+            }
+
+            return $response;
+        }
+
+    }
 
     public function SaveCredinUser($newinsertingId,$name,$password,$email,$role){
 
@@ -93,10 +167,12 @@ class CustomerController extends Controller
 
             } else {
             Mail::to($request->email)->send(new WelcomeEmail($request->password,$name,$request->email));
+            $pushnotification = $this->SendPushNotification($newinsertingId,'Customer');
                 return response()->json([
                     'status' => true,
                     'message' => 'Customer Registered Successfully',
-                    'token' => $user->createToken("API TOKEN")->plainTextToken
+                    'FCMResponse' => $pushnotification
+                    //'token' => $user->createToken("API TOKEN")->plainTextToken,
                 ], 200);
             }
             } else {

@@ -1040,7 +1040,9 @@ class DoctorController extends Controller
         $validator = Validator::make($request->all(), [
             'userId' => 'required|exists:users,id',
             'firebaseUserId' => 'required|string',
-            'role'=> 'required',
+            'firebaseUserToken' => 'required|string',
+            'firebaseAuthId' => 'required|string',
+            'role'=> 'required'
         ]);
 
         if ($validator->fails()) {
@@ -1052,6 +1054,13 @@ class DoctorController extends Controller
         }
 
         try {
+
+            $doctor = User::findOrFail($request->userId);
+            $doctor->FbUserID = $request->firebaseUserId;
+            $doctor->FbToken = $request->firebaseUserToken;
+            $doctor->FBAuth = $request->firebaseAuthId;
+            $doctor->updated_at  = date('Y-m-d H:i:s');
+            $doctor->save();
 
             if($request->role == 'Doctor') {
             $doctor = hvr_doctors::findOrFail($request->userId);
@@ -1076,6 +1085,10 @@ class DoctorController extends Controller
             } else if($request->role == 'Customer') {
                 $doctor = Customers::findOrFail($request->userId);
                 $doctor->firebaseUserId = $request->firebaseUserId;
+                $doctor->save();
+            } else if($request->role == 'Admin') {
+                $doctor = User::findOrFail($request->userId);
+                $doctor->FbUserID = $request->firebaseUserId;
                 $doctor->save();
             } else {
                 return response()->json([
