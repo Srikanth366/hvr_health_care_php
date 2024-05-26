@@ -24,6 +24,7 @@ use App\Models\Pharmacy;
 use App\Models\favorite;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use App\Models\WorkingHour;
 
  
 
@@ -263,7 +264,8 @@ class DoctorController extends Controller
                 }else {
                     $specialitys = explode(",", $doctorDetails->specialist);
                     $doctorSpecialities = Specialists::query()->whereIn('id', $specialitys)->get();
-                    $workingHours = availability::where('user_id', $id)->get();
+                    //$workingHours = availability::where('user_id', $id)->get();
+                    $workingHours  = WorkingHour::where('user_id', $id)->get();
 
 
                    $response = [
