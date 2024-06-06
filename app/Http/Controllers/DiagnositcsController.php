@@ -19,6 +19,7 @@ use App\Models\Appointments;
 use App\Models\Appointment_history;
 use App\Models\upload_images_documents;
 use App\Models\Specialists;
+use App\Models\WorkingHour;
 
 
 class DiagnositcsController extends Controller
@@ -47,7 +48,8 @@ class DiagnositcsController extends Controller
                      $categoryIds = explode(',', $appconfig);
                      $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
                      $Diagnositcs['specialities'] = implode(', ', $specialityNames);
-                     $WorkingHours = availability::where('user_id', $id)->get();
+                    // $WorkingHours = availability::where('user_id', $id)->get();
+                       $WorkingHours  = WorkingHour::where('user_id', $id)->get();
                  }
              
            }

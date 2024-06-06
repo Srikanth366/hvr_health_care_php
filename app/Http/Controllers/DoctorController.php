@@ -24,6 +24,10 @@ use App\Models\Pharmacy;
 use App\Models\favorite;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use App\Models\WorkingHour;
+use App\Models\PushNotification;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 
  
 
@@ -263,7 +267,8 @@ class DoctorController extends Controller
                 }else {
                     $specialitys = explode(",", $doctorDetails->specialist);
                     $doctorSpecialities = Specialists::query()->whereIn('id', $specialitys)->get();
-                    $workingHours = availability::where('user_id', $id)->get();
+                    //$workingHours = availability::where('user_id', $id)->get();
+                    $workingHours  = WorkingHour::where('user_id', $id)->get();
 
 
                    $response = [
@@ -792,6 +797,28 @@ class DoctorController extends Controller
 
     }
 
+    public function ViewUploadedDocuments($id){
+        try {
+
+            $documents = upload_images_documents::where('uploaded_user_id', $id)->get();
+
+
+                if (!$documents) {
+                    return $this->apiResponse(false, 'No Data found', []);
+                }else {
+                   $response = [
+                    'status' => true,
+                    'message' => 'Success',
+                    'data' => $documents,
+                ];
+        
+                return response()->json($response);
+                }
+            }catch (\Exception $e) {
+                return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+            }
+    }
+
     public function uploadDocuments(Request $request){
 
         if($request->document_type == 'IMAGE') {
@@ -865,6 +892,7 @@ class DoctorController extends Controller
         $uploadDocument->document_type = $request->document_type;
         $uploadDocument->uploaded_user_id = $request->user_id;
         $uploadDocument->uploaded_user_type = $request->user_type;
+        $uploadDocument->file_name =  $request->file_name;
         $uploadDocument->save();
 
         if($uploadDocument){
@@ -1006,9 +1034,11 @@ class DoctorController extends Controller
                         }
                     $name = $request->first_name.' '.$request->last_name;
                     Mail::to($request->email)->send(new WelcomeEmail($request->password,$name,$request->email));
+                    $pushnotification = $this->SendPushNotification($newinsertingId,'Doctor');
                     return response()->json([
                     'status' => true,
                     'message' => 'Successfully Registered',
+                    'FCMResponse' => $pushnotification
                     ], 200);  
 
                     } else {
@@ -1111,4 +1141,151 @@ class DoctorController extends Controller
     }
 
 
+        public function SendPushNotification($newinsertingId,$role){
+    
+            $serviceAccountPath = env('FirebasePAth');
+            $authBearerToken = $this->generateFCMToken($serviceAccountPath);
+    
+            $adminUsers = User::where('roles', 'Admin')->get();
+            $user = User::find($newinsertingId);
+            if ($user) {
+                $firebaseUserId = $user->FbUserID;
+            } else {
+                $firebaseUserId = '';
+            }
+    
+            if ($adminUsers->isEmpty()) {
+                return response()->json(['message' => 'No admin users found'], 404);
+            } else {
+    
+                $FMProjetID = env('ProjetID');
+                foreach($adminUsers as $admins){
+                    $unames = $admins->name;
+                    $FbUserID = $admins->FbUserID;
+                    $FbToken = $admins->FbToken;
+                    $FBAuth = 'Bearer '.$authBearerToken;
+    
+                    $ptitle = "Dear ".$unames." Great News!";
+                    $pmessage = "A new doctor just registered with us. Please verify and approve.";
+    
+    $notificationTitle = "Registration Alert";
+    $notificationBody = "A new doctor just registered with us. Please verify and approve.";
+    $role = "User Registration";
+    $userId = ".$newinsertingId.";
+    //$firebaseUserId = "q55qcFxbwjcNjpbvBSywhedxDyw1";
+    $type = "profile";
+    $androidTitle = "Dear ".$unames." Great News!";
+    $androidBody = "A new doctor just registered with us. Please verify and approve.";
+    $androidSound = "default";
+    $apnsSound = "default";
+    $apnsPriority = "5";
+    
+    // Construct the associative array
+    $data = [
+        "message" => [
+            "token" => $FbToken,
+            "notification" => [
+                "title" => $notificationTitle,
+                "body" => $notificationBody,
+            ],
+            "data" => [
+                "role" => $role,
+                "userId" => $userId,
+                "firebaseUserId" => $firebaseUserId,
+                "type" => $type,
+            ],
+            "android" => [
+                "priority" => "high",
+                "notification" => [
+                    "title" => $androidTitle,
+                    "body" => $androidBody,
+                    "sound" => $androidSound,
+                ],
+            ],
+            "apns" => [
+                "payload" => [
+                    "aps" => [
+                        "sound" => $apnsSound,
+                        "content-available" => 1,
+                    ],
+                ],
+                "headers" => [
+                    "apns-priority" => $apnsPriority,
+                ],
+            ],
+        ],
+    ];
+                    
+                    $curl = curl_init();
+                    curl_setopt_array($curl, array(
+                        CURLOPT_URL => 'https://fcm.googleapis.com/v1/projects/' . $FMProjetID . '/messages:send',
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_ENCODING => '',
+                        CURLOPT_MAXREDIRS => 10,
+                        CURLOPT_TIMEOUT => 0,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                        CURLOPT_CUSTOMREQUEST => 'POST',
+                        CURLOPT_POSTFIELDS => json_encode($data),
+                        CURLOPT_HTTPHEADER => array(
+                            'Authorization: ' . $FBAuth,
+                            'Content-Type: application/json'
+                        ),
+                    ));
+                    
+                    $response = curl_exec($curl);
+                    
+                    curl_close($curl);
+    
+                        $pushNotification = PushNotification::create([
+                            'title' => $ptitle,
+                            'message' => $pmessage,
+                            'user_id' => $admins->id,
+                            'role' => 'Admin',
+                            'status' => 0,
+                        ]);
+                        
+                }
+    
+                return $response;
+            }
+    
+        }
+
+        function generateFCMToken($serviceAccountPath)
+        {
+
+            $serviceAccount = json_decode(file_get_contents($serviceAccountPath), true);
+            $now_seconds = time();
+            $exp_seconds = $now_seconds + (60 * 60);
+            $payload = array(
+                "iss" => $serviceAccount['client_email'],
+                "sub" => $serviceAccount['client_email'],
+                "aud" => "https://oauth2.googleapis.com/token",
+                "iat" => $now_seconds,
+                "exp" => $exp_seconds,
+                "scope" => "https://www.googleapis.com/auth/firebase.messaging"
+            );
+            $jwt = JWT::encode($payload, $serviceAccount['private_key'], 'RS256');
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, 'https://oauth2.googleapis.com/token');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion' => $jwt
+            ]));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/x-www-form-urlencoded'
+            ]);
+
+            $result = curl_exec($ch);
+            if (curl_errno($ch)) {
+                echo 'Error:' . curl_error($ch);
+            }
+            curl_close($ch);
+        
+            $response = json_decode($result, true);
+            return $response['access_token'];
+        }
 }

@@ -18,6 +18,7 @@ use App\Models\availability;
 use App\Models\Appointments;
 use App\Models\Appointment_history;
 use App\Models\Specialists;
+use App\Models\WorkingHour;
 
 
 class PharmacyController extends Controller
@@ -46,7 +47,8 @@ class PharmacyController extends Controller
                      $categoryIds = explode(',', $appconfig);
                      $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
                      $Diagnositcs['specialities'] = implode(', ', $specialityNames);
-                     $WorkingHours = availability::where('user_id', $id)->get();
+                    // $WorkingHours = availability::where('user_id', $id)->get();
+                     $WorkingHours  = WorkingHour::where('user_id', $id)->get();
                  }
              
            }

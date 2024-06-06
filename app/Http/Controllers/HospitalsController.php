@@ -22,6 +22,7 @@ use App\Models\availability;
 use App\Models\Appointments;
 use App\Models\Appointment_history;
 use App\Models\Diagnositcs;
+use App\Models\WorkingHour;
 
 class HospitalsController extends Controller
 {
@@ -76,7 +77,8 @@ class HospitalsController extends Controller
                     $categoryIds = explode(',', $appconfig);
                     $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
                     $hospitals['specialities'] = implode(', ', $specialityNames);
-                    $WorkingHours = availability::where('user_id', $id)->get();
+                    // $WorkingHours = availability::where('user_id', $id)->get();
+                    $WorkingHours  = WorkingHour::where('user_id', $id)->get();
                 }
             
           }
