@@ -797,6 +797,28 @@ class DoctorController extends Controller
 
     }
 
+    public function ViewUploadedDocuments($id){
+        try {
+
+            $documents = upload_images_documents::where('uploaded_user_id', $id)->get();
+
+
+                if (!$documents) {
+                    return $this->apiResponse(false, 'No Data found', []);
+                }else {
+                   $response = [
+                    'status' => true,
+                    'message' => 'Success',
+                    'data' => $documents,
+                ];
+        
+                return response()->json($response);
+                }
+            }catch (\Exception $e) {
+                return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+            }
+    }
+
     public function uploadDocuments(Request $request){
 
         if($request->document_type == 'IMAGE') {
@@ -870,6 +892,7 @@ class DoctorController extends Controller
         $uploadDocument->document_type = $request->document_type;
         $uploadDocument->uploaded_user_id = $request->user_id;
         $uploadDocument->uploaded_user_type = $request->user_type;
+        $uploadDocument->file_name =  $request->file_name;
         $uploadDocument->save();
 
         if($uploadDocument){
