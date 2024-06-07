@@ -819,9 +819,31 @@ class DoctorController extends Controller
             }
     }
 
+    public function GetBanners(){
+        try {
+
+            $documents = upload_images_documents::where('document_type', 'Banner')->orderBy('id', 'desc')->first();
+
+
+                if (!$documents) {
+                    return $this->apiResponse(false, 'No Data found', []);
+                }else {
+                   $response = [
+                    'status' => true,
+                    'message' => 'Success',
+                    'data' => $documents,
+                ];
+        
+                return response()->json($response);
+                }
+            }catch (\Exception $e) {
+                return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+            }
+    }
+
     public function uploadDocuments(Request $request){
 
-        if($request->document_type == 'IMAGE') {
+        if($request->document_type == 'IMAGE' || $request->document_type == 'Banner') {
             $validator = Validator::make($request->all(), [
                 'document_type' => 'required', 
                 'user_id' => 'required',
@@ -1243,6 +1265,7 @@ class DoctorController extends Controller
                             'user_id' => $admins->id,
                             'role' => 'Admin',
                             'status' => 0,
+                            'customer_id' => $newinsertingId
                         ]);
                         
                 }
@@ -1251,6 +1274,46 @@ class DoctorController extends Controller
             }
     
         }
+
+        public function updateSPushnotificationtatus($id)
+        {
+            try {
+            $affected = PushNotification::where('id', $id)->update(['status' => '1']);
+
+            if ($affected) {
+                return response()->json(['status' => true,'message' => 'Record updated successfully.'],200);
+            } else {
+                return response()->json(['status' => false,'message' => 'Failed to update record.'], 500);
+            }
+
+            } catch (\Exception $e) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'An error occurred while updating the data',
+                    'error' => $e->getMessage(),
+                ], 500);
+            }
+        }
+
+        public function GetPushNotification($id)
+        {
+            try {
+                $data = PushNotification::where('user_id', $id)->get();
+                if ($data->isEmpty()) {
+                    return response()->json(['status' => false,'message' => 'No records found.'], 404);
+                }
+
+                return response()->json(['status' => true,'message' => 'success','data'=>$data], 200);
+
+            } catch (\Exception $e) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'An error occurred while updating the data',
+                    'error' => $e->getMessage(),
+                ], 500);
+            }
+        }
+
 
         function generateFCMToken($serviceAccountPath)
         {
@@ -1287,5 +1350,47 @@ class DoctorController extends Controller
         
             $response = json_decode($result, true);
             return $response['access_token'];
+        }
+
+        public function GenerateFirebaseToken()
+        {
+            $serviceAccountPath = env('FirebasePAth');
+            $serviceAccount = json_decode(file_get_contents($serviceAccountPath), true);
+            $now_seconds = time();
+            $exp_seconds = $now_seconds + (60 * 60);
+            $payload = array(
+                "iss" => $serviceAccount['client_email'],
+                "sub" => $serviceAccount['client_email'],
+                "aud" => "https://oauth2.googleapis.com/token",
+                "iat" => $now_seconds,
+                "exp" => $exp_seconds,
+                "scope" => "https://www.googleapis.com/auth/firebase.messaging"
+            );
+            $jwt = JWT::encode($payload, $serviceAccount['private_key'], 'RS256');
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, 'https://oauth2.googleapis.com/token');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion' => $jwt
+            ]));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/x-www-form-urlencoded'
+            ]);
+
+            $result = curl_exec($ch);
+            if (curl_errno($ch)) {
+                echo 'Error:' . curl_error($ch);
+            }
+            curl_close($ch);
+        
+            $response = json_decode($result, true);
+            //return $response['access_token'];
+            return response()->json([
+                'status' => true,
+                'message' => 'Token Generated Suceessfully',
+                'data' => $response,
+            ], 200);
         }
 }

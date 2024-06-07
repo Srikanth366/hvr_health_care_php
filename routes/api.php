@@ -58,6 +58,7 @@ Route::get('viewprofile',[DoctorController::class,"viewprofile"]);
 Route::post("uploaddocuments",[DoctorController::class,"uploadDocuments"]);
 Route::delete("deleteDocuments/{id}",[DoctorController::class,"deleteDocuments"]);
 Route::get("ViewUploadedDocument/{id}",[DoctorController::class,"ViewUploadedDocuments"]);
+Route::get("GetBanner",[DoctorController::class,"GetBanners"]);
 
 //Route::get('DoctorProfile/{id}', [DoctorController::class, 'getDoctorProfile'])->middleware('auth.error.route');
 //Route::get('/error', [ErrorController::class, 'routeError'])->name('error.route');
@@ -78,6 +79,9 @@ Route::post("logindoctor",[DoctorController::class,"loginUser"]);
 Route::post("doctorToken",[UserController::class,"generateToken"]);
 Route::put("SetFirebaseToken",[DoctorController::class,"UpdateFirebaseToken"]);
 
+Route::get("PushNotificationStatusUpdate/{id}",[DoctorController::class,"updateSPushnotificationtatus"]);
+Route::get("GetPushNotification/{id}",[DoctorController::class,"GetPushNotification"]);
+Route::get("GenerateFCMToken",[DoctorController::class,"GenerateFirebaseToken"]);
 Route::post("UserToken",[UserController::class,"generateToken"]);
 Route::post("login",[UserController::class,'index']);
 
