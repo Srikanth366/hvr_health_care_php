@@ -458,6 +458,7 @@ class HospitalsController extends Controller
             $validateUser = Validator::make($request->all(), [
                 'doctor_type' => 'required',
                 'PatientID' => 'required',
+                'PatientMobile' => 'required',
                 'DoctorID' => 'required',
                 'AppointmentDate' => 'required',
                 'AppointmentTime' => 'required',
@@ -477,12 +478,14 @@ class HospitalsController extends Controller
              $appoinmentData = Appointments::create([
                 'doctor_type' => $request->doctor_type,
                 'PatientID' => $request->PatientID,
+                'PatientMobile' => $request->PatientMobile,
                 'DoctorID' => $request->DoctorID,
                 'AppointmentDate' => $request->AppointmentDate,
                 'AppointmentTime' => $request->AppointmentTime,
                 'Notes' => $request->Notes ? $request->Notes : 'Notes Not Provided.',
                 'name' => $request->name,
                 'age' => $request->age,
+                'speciality_name' => $request->speciality_name ? $request->speciality_name : 'Doctor',
             ]);
 
             if($appoinmentData){
