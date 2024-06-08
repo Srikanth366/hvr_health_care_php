@@ -29,4 +29,9 @@ class Diagnositcs extends Model
     protected $hidden = [];
 
     protected $casts = [];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id');
+    }
 }

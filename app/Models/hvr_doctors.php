@@ -41,4 +41,9 @@ class hvr_doctors extends Model
      * @var array<string, string>
      */
     protected $casts = ['password' => 'string'];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id');
+    }
 }

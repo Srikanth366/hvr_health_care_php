@@ -819,10 +819,14 @@ class DoctorController extends Controller
             }
     }
 
-    public function GetBanners(){
+    public function GetBanners($id = null){
         try {
 
-            $documents = upload_images_documents::where('document_type', 'Banner')->orderBy('id', 'desc')->first();
+            if($id == null){
+                $documents = upload_images_documents::where('document_type', 'Banner')->orderBy('id', 'desc')->get();
+            } else {
+                $documents = upload_images_documents::where('document_type', 'Banner')->orderBy('id', 'desc')->first();
+            }
 
 
                 if (!$documents) {

@@ -59,6 +59,7 @@ Route::post("uploaddocuments",[DoctorController::class,"uploadDocuments"]);
 Route::delete("deleteDocuments/{id}",[DoctorController::class,"deleteDocuments"]);
 Route::get("ViewUploadedDocument/{id}",[DoctorController::class,"ViewUploadedDocuments"]);
 Route::get("GetBanner",[DoctorController::class,"GetBanners"]);
+Route::get("GetBanner/{id}",[DoctorController::class,"GetBanners"]);
 
 //Route::get('DoctorProfile/{id}', [DoctorController::class, 'getDoctorProfile'])->middleware('auth.error.route');
 //Route::get('/error', [ErrorController::class, 'routeError'])->name('error.route');
@@ -162,3 +163,5 @@ Route::delete("DeleteWorkingHours/{id}",[WorkingHourController::class,"destroy"]
 Route::get("GetWorkingHours/{id}",[WorkingHourController::class,"GetWorkingHours"]);
 Route::post("GetAppointmentslots",[WorkingHourController::class,"GetAppointmentslots"]);
 /** Set Working Hours End */
+
+Route::post("GlobalSearch",[HospitalsController::class,"GlobalSearch"]);
