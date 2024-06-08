@@ -163,3 +163,5 @@ Route::delete("DeleteWorkingHours/{id}",[WorkingHourController::class,"destroy"]
 Route::get("GetWorkingHours/{id}",[WorkingHourController::class,"GetWorkingHours"]);
 Route::post("GetAppointmentslots",[WorkingHourController::class,"GetAppointmentslots"]);
 /** Set Working Hours End */
+
+Route::post("GlobalSearch",[HospitalsController::class,"GlobalSearch"]);

@@ -465,6 +465,7 @@ class HospitalsController extends Controller
                 'Notes' => 'required',
                 'name' => 'required',
                 'age' => 'required',
+                'speciality_name' => 'required'
             ]);
 
              if ($validateUser->fails()) {
@@ -689,14 +690,121 @@ class HospitalsController extends Controller
         }
     }
 
-    /* public function GlobalStatusUpdate(Request $request){
+     public function GlobalSearch(Request $request){
         try{
-                
+           
+
+            /* $hvrDoctors = hvr_doctors::whereHas('user', function ($query) {
+                $query->where('status', 'Active');
+            })->with('user')->get();
+
+           $hvrDoctors = DB::table('hvr_doctors')
+            ->join('users', 'hvr_doctors.id', '=', 'users.id')
+            ->where('users.status', 'Active')
+            ->select('hvr_doctors.*', 'users.name') // Adjust the columns as needed
+            ->get(); 
+
+            $hvrDoctors = hvr_doctors::whereHas('user', function ($query) {
+                $query->where('status', 'Active');
+            })->get(); */
+
+            $hvrDoctors = hvr_doctors::select(
+                'hvr_doctors.id as Id',
+                 DB::raw("CONCAT(hvr_doctors.first_name, ' ', hvr_doctors.last_name) as Name"),
+                'hvr_doctors.profile_photo',
+                'hvr_doctors.profile_status as role',  
+                'hvr_doctors.specialist as specialistCategory',  
+            )
+            ->whereHas('user', function ($query) {
+                $query->where('status', 'Active');
+            })
+            ->get();
+
+            foreach ($hvrDoctors as $doctor) {
+                $specialitys = explode(",", $doctor->specialistCategory);
+                $doctorSpecialities = Specialists::query()->whereIn('id', $specialitys)->pluck('speciality');
+                   $doctor->role  = 'Doctor';
+                   $doctor->specialistCategory  = $doctorSpecialities;
+            }
+
+            /***** */
+            $hospitals = hospital::select(
+                'hospitals.id as Id',
+                'hospitals.hospital_name as Name',
+                'hospitals.logo as profile_photo',
+                'hospitals.status as role',  
+                'hospitals.category as specialistCategory',  
+            )
+            ->whereHas('user', function ($query) {
+                $query->where('status', 'Active');
+            })
+            ->get();
+
+                foreach ($hospitals as $doctor){
+                    $appconfig = appcategoryconfig::where("user_id", $doctor->id)->pluck('category_id')->implode(',');
+                    $categoryIds = explode(',', $appconfig);
+                    $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality');
+                    //$doctor['specialities'] = implode(', ', $specialityNames);
+                    $doctor->role  = 'Hospital';
+                    $doctor->specialistCategory  = $specialityNames;
+                }
+            /***** */
+            $Diagnostics = Diagnositcs::select(
+                'diagnositcs.id as Id',
+                'diagnositcs.diagnostics_name as Name',
+                'diagnositcs.logo as profile_photo',
+                'diagnositcs.status as role',  
+                'diagnositcs.category as specialistCategory',  
+            )
+            ->whereHas('user', function ($query) {
+                $query->where('status', 'Active');
+            })
+            ->get();
+           
+                foreach ($Diagnostics as $doctor){
+                    $appconfig = appcategoryconfig::where("user_id", $doctor->id)->pluck('category_id')->implode(',');
+                    $categoryIds = explode(',', $appconfig);
+                    $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality');
+                    //$doctor['specialities'] = implode(', ', $specialityNames);
+                    $doctor->role  = 'Diagnositcs';
+                    $doctor->specialistCategory  = $specialityNames;
+                }
+            /***** */
+            
+            $Pharmacy = Pharmacy::select(
+                'pharmacy.id as Id',
+                'pharmacy.pharmacy_name as Name',
+                'pharmacy.logo as profile_photo',
+                'pharmacy.status as role',  
+                'pharmacy.category as specialistCategory',  
+            )
+            ->whereHas('user', function ($query) {
+                $query->where('status', 'Active');
+            })
+            ->get();
+           
+                foreach ($Pharmacy as $doctor){
+                    $appconfig = appcategoryconfig::where("user_id", $doctor->id)->pluck('category_id')->implode(',');
+                    $categoryIds = explode(',', $appconfig);
+                    $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality');
+                    //$doctor['specialities'] = implode(', ', $specialityNames);
+                    $doctor->role  = 'Pharmacy';
+                    $doctor->specialistCategory  = $specialityNames;
+                }
+            /***** */
+            $result = collect([
+                'Hospital' => $hospitals,
+                'Doctor' => $hvrDoctors,
+                'Diagnositcs' => $Diagnostics,
+                'Pharmacy' => $Pharmacy
+            ]);
+
+            return $this->apiResponse(true, 'Sucess', $result);
         }    
         catch (\Exception $e) {
             return $this->apiResponse(false, 'Failed', [], $e->getMessage());
         }
-    } */
+    }
 
     private function apiResponse($status, $message, $data = [], $error = null)
     {
@@ -712,4 +820,6 @@ class HospitalsController extends Controller
 
         return response()->json($response);
     }
+
+
 }
