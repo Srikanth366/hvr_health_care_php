@@ -792,14 +792,26 @@ class HospitalsController extends Controller
                     $doctor->specialistCategory  = $specialityNames;
                 }
             /***** */
-            $result = collect([
+           /* $result = collect([
                 'Hospital' => $hospitals,
                 'Doctor' => $hvrDoctors,
                 'Diagnositcs' => $Diagnostics,
                 'Pharmacy' => $Pharmacy
-            ]);
+            ]);  */
 
-            return $this->apiResponse(true, 'Sucess', $result);
+            $data['Hospital'] = $hospitals;
+            $data['Doctor'] = $hvrDoctors;
+            $data['Diagnositcs'] = $Diagnostics;
+            $data['Pharmacy'] = $Pharmacy;
+
+
+            $hospitalArray = is_array($data['Hospital']) ? $data['Hospital'] : $data['Hospital']->toArray();
+            $doctorArray = is_array($data['Doctor']) ? $data['Doctor'] : $data['Doctor']->toArray();
+            $diagnosticsArray = is_array($data['Diagnositcs']) ? $data['Diagnositcs'] : $data['Diagnositcs']->toArray();
+            $pharmacyArray = is_array($data['Pharmacy']) ? $data['Pharmacy'] : $data['Pharmacy']->toArray();
+            $mergedArray = array_merge($hospitalArray, $doctorArray, $diagnosticsArray, $pharmacyArray);
+
+            return $this->apiResponse(true, 'Sucess', $mergedArray);
         }    
         catch (\Exception $e) {
             return $this->apiResponse(false, 'Failed', [], $e->getMessage());
