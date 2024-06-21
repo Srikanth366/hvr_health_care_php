@@ -155,6 +155,7 @@ Route::put("updatePharmacyData",[PharmacyController::class,"updatePharmacyData"]
 /*** Chat  */
 Route::post("RequestForChat",[ChatController::class,"RequestForChat"]);
 Route::post("ApprovedOrRejectChat",[ChatController::class,"ApprovedOrRejectChat"]);
+Route::post("GetChatRequestdata",[ChatController::class,"GetChatRequestdata"]);
 /**** Chat Ed */
 
 /** Set Working Hours */

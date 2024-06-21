@@ -131,4 +131,64 @@ class ChatController extends Controller
             ], 500);
         }
     }
+
+    public function GetChatRequestdata(Request $request){
+        try {
+            $validateUser = Validator::make($request->all(), [
+                'userid' => 'required',
+                'role' => 'required',
+             ]);
+ 
+             if ($validateUser->fails()) {
+                 return response()->json([
+                     'status' => false,
+                     'message' => 'Validation error',
+                     'errors' => implode(', ', $validateUser->errors()->all())
+                 ], 400);
+             }
+
+             if($request->role == 'Customer'){
+                $chatRequests = Chatrequest::where('patientID', $request->userid)->get();
+             } else {
+                $chatRequests = Chatrequest::where('doctorID', $request->userid)->get();
+             }
+             
+             if ($chatRequests->isEmpty()) {
+                 return response()->json(['status' => false,'message' => 'No chat requests found.'], 404);
+             } else {
+
+                    foreach($chatRequests as $chat){
+                        if($chat->user_chat_status == 1) {
+                            $chat['is_chat_accepted'] = "Your chat account has been blocked.";
+                        } else {
+                            if($chat->status == 0) {
+                              $chat['is_chat_accepted'] = "Your chat account is under review.";
+                            } else if($chat->status == 1) {
+                                $chat['is_chat_accepted'] = "Your chat account has been approved.";
+                            } else if($chat->status == 2) {
+                                $chat['is_chat_accepted'] = "Your chat account has been Rejected.";
+                              }
+                        }
+                        
+                    }
+
+                    return response()->json(['status' => true,
+                                        'message' => 'Success',
+                                        'request_status' => $chatRequests], 200);
+             }
+            
+                /*return response()->json([
+                    'status' => false,
+                    'message' => 'Please share Valid Data',
+                ], 403); */
+
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+
+
+    }
 }
