@@ -205,6 +205,8 @@ class DoctorController extends Controller
                         'message' => 'User Logged In Successfully',
                         //'user' => $userData,
                         'userid' => $user->id,
+                        'username' => $user->name,
+                        'useremail' => $user->email,
                         'roles' => $user->roles,
                         'token' => $user->createToken('my-app-token')->plainTextToken
                     ], 200);
