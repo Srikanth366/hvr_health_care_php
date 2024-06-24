@@ -694,19 +694,18 @@ class HospitalsController extends Controller
         try{
            
 
-            /* $hvrDoctors = hvr_doctors::whereHas('user', function ($query) {
-                $query->where('status', 'Active');
-            })->with('user')->get();
+            $validateUser = Validator::make($request->all(), [
+                'search' => 'required'
+            ]);
 
-           $hvrDoctors = DB::table('hvr_doctors')
-            ->join('users', 'hvr_doctors.id', '=', 'users.id')
-            ->where('users.status', 'Active')
-            ->select('hvr_doctors.*', 'users.name') // Adjust the columns as needed
-            ->get(); 
-
-            $hvrDoctors = hvr_doctors::whereHas('user', function ($query) {
-                $query->where('status', 'Active');
-            })->get(); */
+             if ($validateUser->fails()) {
+                 return response()->json([
+                     'status' => false,
+                     'message' => 'Validation error',
+                     'errors' => implode(', ', $validateUser->errors()->all())
+                 ], 400);
+             }
+            $searchTerm = $request->search;
 
             $hvrDoctors = hvr_doctors::select(
                 'hvr_doctors.id as Id',
@@ -810,13 +809,25 @@ class HospitalsController extends Controller
             $diagnosticsArray = is_array($data['Diagnositcs']) ? $data['Diagnositcs'] : $data['Diagnositcs']->toArray();
             $pharmacyArray = is_array($data['Pharmacy']) ? $data['Pharmacy'] : $data['Pharmacy']->toArray();
             $mergedArray = array_merge($hospitalArray, $doctorArray, $diagnosticsArray, $pharmacyArray);
-
-            return $this->apiResponse(true, 'Sucess', $mergedArray);
+           
+            $result  = $this->searchByName($mergedArray,$searchTerm);
+            return $this->apiResponse(true, 'Sucess', $result);
         }    
         catch (\Exception $e) {
             return $this->apiResponse(false, 'Failed', [], $e->getMessage());
         }
     }
+
+    public function searchByName($array, $searchTerm) {
+        $results = [];
+        foreach ($array as $item) {
+            if (strpos($item['Name'], $searchTerm) !== false) {
+                $results[] = $item;
+            }
+        }
+        return $results;
+    }
+    
 
     private function apiResponse($status, $message, $data = [], $error = null)
     {

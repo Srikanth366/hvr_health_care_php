@@ -84,7 +84,7 @@ Route::get("PushNotificationStatusUpdate/{id}",[DoctorController::class,"updateS
 Route::get("GetPushNotification/{id}",[DoctorController::class,"GetPushNotification"]);
 Route::get("GenerateFCMToken",[DoctorController::class,"GenerateFirebaseToken"]);
 Route::post("UserToken",[UserController::class,"generateToken"]);
-Route::post("login",[UserController::class,'index']);
+//Route::post("login",[UserController::class,'index']);
 
 Route::post("createCustomer",[CustomerController::class,"createCustomer"]);
 Route::post("CustomerPicture",[CustomerController::class,"UploadProfile"]);
