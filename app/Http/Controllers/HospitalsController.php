@@ -580,17 +580,24 @@ class HospitalsController extends Controller
                                      ->orderBy('id', 'desc')
                                      ->get(); */
 
+            if(isset($request->date)){
+                $appointment = Appointments::where('DoctorID', $request->user_id)
+                ->where('appointments.AppointmentDate', $request->date)
+                ->join('customer', 'appointments.PatientID', '=', 'customer.id')
+                ->orderBy('appointments.id', 'desc')
+                ->get(['appointments.*','customer.id as customer_id','customer.first_name','customer.last_name','customer.email','customer.mobile_number','customer.profile_photo','customer.gender']);
+            } else {
                 $appointment = Appointments::where('DoctorID', $request->user_id)
                 ->join('customer', 'appointments.PatientID', '=', 'customer.id')
                 ->orderBy('appointments.id', 'desc')
                 ->get(['appointments.*','customer.id as customer_id','customer.first_name','customer.last_name','customer.email','customer.mobile_number','customer.profile_photo','customer.gender']);
+            }
 
-
-             if($appointment){
-                return response()->json(['status'=>true, 'message' => 'Success', 'data'=>$appointment], 200);
-             } else {
+            if ($appointment->isEmpty()) {
                 return response()->json(['status'=>false, 'message' => 'Appointment not found'], 404);
-             }
+            } else {
+                return response()->json(['status'=>true, 'message' => 'Success', 'data'=>$appointment], 200);
+            }
 
         } catch (\Exception $e) {
             return $this->apiResponse(false, 'Failed', [], $e->getMessage());
