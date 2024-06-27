@@ -580,17 +580,24 @@ class HospitalsController extends Controller
                                      ->orderBy('id', 'desc')
                                      ->get(); */
 
+            if(isset($request->date)){
+                $appointment = Appointments::where('DoctorID', $request->user_id)
+                ->where('appointments.AppointmentDate', $request->date)
+                ->join('customer', 'appointments.PatientID', '=', 'customer.id')
+                ->orderBy('appointments.id', 'desc')
+                ->get(['appointments.*','customer.id as customer_id','customer.first_name','customer.last_name','customer.email','customer.mobile_number','customer.profile_photo','customer.gender']);
+            } else {
                 $appointment = Appointments::where('DoctorID', $request->user_id)
                 ->join('customer', 'appointments.PatientID', '=', 'customer.id')
                 ->orderBy('appointments.id', 'desc')
                 ->get(['appointments.*','customer.id as customer_id','customer.first_name','customer.last_name','customer.email','customer.mobile_number','customer.profile_photo','customer.gender']);
+            }
 
-
-             if($appointment){
-                return response()->json(['status'=>true, 'message' => 'Success', 'data'=>$appointment], 200);
-             } else {
+            if ($appointment->isEmpty()) {
                 return response()->json(['status'=>false, 'message' => 'Appointment not found'], 404);
-             }
+            } else {
+                return response()->json(['status'=>true, 'message' => 'Success', 'data'=>$appointment], 200);
+            }
 
         } catch (\Exception $e) {
             return $this->apiResponse(false, 'Failed', [], $e->getMessage());
@@ -709,7 +716,7 @@ class HospitalsController extends Controller
 
             $hvrDoctors = hvr_doctors::select(
                 'hvr_doctors.id as Id',
-                 DB::raw("CONCAT(hvr_doctors.first_name, ' ', hvr_doctors.last_name) as Name"),
+                 DB::raw("LOWER(CONCAT(hvr_doctors.first_name, ' ', hvr_doctors.last_name)) as Name"),
                 'hvr_doctors.profile_photo',
                 'hvr_doctors.profile_status as role',  
                 'hvr_doctors.specialist as specialistCategory',  
@@ -721,7 +728,12 @@ class HospitalsController extends Controller
 
             foreach ($hvrDoctors as $doctor) {
                 $specialitys = explode(",", $doctor->specialistCategory);
-                $doctorSpecialities = Specialists::query()->whereIn('id', $specialitys)->pluck('speciality');
+               // $doctorSpecialities = Specialists::query()->whereIn('id', $specialitys)->pluck('speciality');
+                $doctorSpecialities = Specialists::query()
+                ->whereIn('id', $specialitys)
+                ->select(DB::raw('LOWER(speciality) as speciality'))
+                ->pluck('speciality');
+
                    $doctor->role  = 'Doctor';
                    $doctor->specialistCategory  = $doctorSpecialities;
             }
@@ -729,7 +741,7 @@ class HospitalsController extends Controller
             /***** */
             $hospitals = hospital::select(
                 'hospitals.id as Id',
-                'hospitals.hospital_name as Name',
+                 DB::raw('LOWER(hospitals.hospital_name) as Name'),
                 'hospitals.logo as profile_photo',
                 'hospitals.status as role',  
                 'hospitals.category as specialistCategory',  
@@ -742,15 +754,17 @@ class HospitalsController extends Controller
                 foreach ($hospitals as $doctor){
                     $appconfig = appcategoryconfig::where("user_id", $doctor->id)->pluck('category_id')->implode(',');
                     $categoryIds = explode(',', $appconfig);
-                    $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality');
-                    //$doctor['specialities'] = implode(', ', $specialityNames);
+                    //$specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality');
+                    $specialityNames = Specialists::whereIn('id', $categoryIds)
+                    ->select(DB::raw('LOWER(speciality) as speciality'))
+                    ->pluck('speciality');
                     $doctor->role  = 'Hospital';
                     $doctor->specialistCategory  = $specialityNames;
                 }
             /***** */
             $Diagnostics = Diagnositcs::select(
                 'diagnositcs.id as Id',
-                'diagnositcs.diagnostics_name as Name',
+                 DB::raw('LOWER(diagnositcs.diagnostics_name) as Name'),
                 'diagnositcs.logo as profile_photo',
                 'diagnositcs.status as role',  
                 'diagnositcs.category as specialistCategory',  
@@ -763,8 +777,11 @@ class HospitalsController extends Controller
                 foreach ($Diagnostics as $doctor){
                     $appconfig = appcategoryconfig::where("user_id", $doctor->id)->pluck('category_id')->implode(',');
                     $categoryIds = explode(',', $appconfig);
-                    $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality');
+                    //$specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality');
                     //$doctor['specialities'] = implode(', ', $specialityNames);
+                    $specialityNames = Specialists::whereIn('id', $categoryIds)
+                    ->select(DB::raw('LOWER(speciality) as speciality'))
+                    ->pluck('speciality');
                     $doctor->role  = 'Diagnositcs';
                     $doctor->specialistCategory  = $specialityNames;
                 }
@@ -772,7 +789,7 @@ class HospitalsController extends Controller
             
             $Pharmacy = Pharmacy::select(
                 'pharmacy.id as Id',
-                'pharmacy.pharmacy_name as Name',
+                 DB::raw('LOWER(pharmacy.pharmacy_name) as Name'),
                 'pharmacy.logo as profile_photo',
                 'pharmacy.status as role',  
                 'pharmacy.category as specialistCategory',  
@@ -785,8 +802,11 @@ class HospitalsController extends Controller
                 foreach ($Pharmacy as $doctor){
                     $appconfig = appcategoryconfig::where("user_id", $doctor->id)->pluck('category_id')->implode(',');
                     $categoryIds = explode(',', $appconfig);
-                    $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality');
+                    //$specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality');
                     //$doctor['specialities'] = implode(', ', $specialityNames);
+                    $specialityNames = Specialists::whereIn('id', $categoryIds)
+                    ->select(DB::raw('LOWER(speciality) as speciality'))
+                    ->pluck('speciality');
                     $doctor->role  = 'Pharmacy';
                     $doctor->specialistCategory  = $specialityNames;
                 }
@@ -809,7 +829,9 @@ class HospitalsController extends Controller
             $diagnosticsArray = is_array($data['Diagnositcs']) ? $data['Diagnositcs'] : $data['Diagnositcs']->toArray();
             $pharmacyArray = is_array($data['Pharmacy']) ? $data['Pharmacy'] : $data['Pharmacy']->toArray();
             $mergedArray = array_merge($hospitalArray, $doctorArray, $diagnosticsArray, $pharmacyArray);
-           
+
+            $searchTerm = strtolower($searchTerm);
+
             $result  = $this->searchByName($mergedArray,$searchTerm);
             return $this->apiResponse(true, 'Sucess', $result);
         }    

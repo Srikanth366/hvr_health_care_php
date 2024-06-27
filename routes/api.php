@@ -132,9 +132,9 @@ Route::get("viewhospitallist",[HospitalsController::class,"gethospitalslist"]);
 Route::get("viewhospitallist/{id}",[HospitalsController::class,"gethospitalslist"]);
 Route::post("SpecialityWiseAllUsersdata",[HospitalsController::class,"GetSpecialityWiseAllUsersdata"]);
 Route::put("updatehospitals",[HospitalsController::class,"updatehospitals"]);
-Route::post("CreateWorkingHours",[HospitalsController::class,"SetWorkingHours"]);
-Route::get("viewWorkingHours/{userid}",[HospitalsController::class,"viewWorkingHours"]);
-Route::delete("deleteWorkingHours/{id}",[HospitalsController::class,"DeleteWorkingHours"]);
+//Route::post("CreateWorkingHours",[HospitalsController::class,"SetWorkingHours"]);
+//Route::get("viewWorkingHours/{userid}",[HospitalsController::class,"viewWorkingHours"]);
+//Route::delete("deleteWorkingHours/{id}",[HospitalsController::class,"DeleteWorkingHours"]);
 Route::post("BookAppointment",[HospitalsController::class,"BookAppointment"]);
 Route::post("AppointmentStatusUpdate",[HospitalsController::class,"ConfirmBookAppointment"]);
 Route::post("DoctorAppointments",[HospitalsController::class,"ViewAppointmentsForDoctor"]);
@@ -160,7 +160,7 @@ Route::post("GetChatRequestdata",[ChatController::class,"GetChatRequestdata"]);
 
 /** Set Working Hours */
 Route::post("SetWorkingHours",[WorkingHourController::class,"store"]);
-Route::delete("DeleteWorkingHours/{id}",[WorkingHourController::class,"destroy"]);
+Route::delete("deleteWorkingHours/{id}",[WorkingHourController::class,"destroy"]);
 Route::get("GetWorkingHours/{id}",[WorkingHourController::class,"GetWorkingHours"]);
 Route::post("GetAppointmentslots",[WorkingHourController::class,"GetAppointmentslots"]);
 /** Set Working Hours End */
