@@ -20,9 +20,12 @@ use App\Models\User;
 use App\Models\Country;
 use Illuminate\Support\Facades\Storage;
 use App\Models\PushNotification;
-
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+
+use App\Providers\FirebaseServiceProvider;
+use App\Facades\FirebaseAuth;
+
 //require_once 'vendor/autoload.php'; 
 require_once app_path('helpers.php');
 
@@ -534,6 +537,12 @@ $data = [
 
             /* $Userslogin->password = Hash::make($randomPassword);
             $Userslogin->save(); */
+
+            // Update password in Firebase
+            $firebaseUser = FirebaseAuth::getUserByEmail($request->email);
+            if ($firebaseUser) {
+                FirebaseAuth::updateUser($firebaseUser->uid, ['password' => $randomPassword]);
+            }
 
 
             if (Mail::failures()) {

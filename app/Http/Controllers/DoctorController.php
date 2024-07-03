@@ -29,6 +29,9 @@ use App\Models\PushNotification;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
+use App\Providers\FirebaseServiceProvider;
+use App\Facades\FirebaseAuth;
+
  
 
 require_once app_path('helpers.php');
@@ -666,6 +669,11 @@ class DoctorController extends Controller
 
            /* $Userslogin->password = Hash::make($randomPassword);
             $Userslogin->save(); */
+
+            $firebaseUser = FirebaseAuth::getUserByEmail($request->email);
+            if ($firebaseUser) {
+                FirebaseAuth::updateUser($firebaseUser->uid, ['password' => $randomPassword]);
+            }
 
             if (Mail::failures()) {
                 return response()->json([
