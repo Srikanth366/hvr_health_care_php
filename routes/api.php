@@ -15,6 +15,22 @@ use App\Http\Controllers\DiagnositcsController;
 use App\Http\Controllers\PharmacyController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\WorkingHourController;
+use App\Providers\FirebaseServiceProvider;
+use App\Facades\FirebaseAuth;
+
+Route::get('/test-firebase-file', function() {
+    $firebaseAuth = app('firebase.auth');
+    dd($firebaseAuth); // This should dump the Firebase auth instance
+});
+
+Route::get('/test-firebase', function () {
+    try {
+        $firebaseUser = FirebaseAuth::getUserByEmail('yeddulasrikanthreddy+01@gmail.com');
+        return $firebaseUser ? $firebaseUser->uid : 'User not found';
+    } catch (\Exception $e) {
+        return $e->getMessage();
+    }
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -88,7 +104,7 @@ Route::post("UserToken",[UserController::class,"generateToken"]);
 
 Route::post("createCustomer",[CustomerController::class,"createCustomer"]);
 Route::post("CustomerPicture",[CustomerController::class,"UploadProfile"]);
-Route::post("CustomerLogin",[CustomerController::class,"loginUser"]);
+//Route::post("CustomerLogin",[CustomerController::class,"loginUser"]);
 Route::post("CustomerToken",[CustomerController::class,"generateToken"]);
 Route::get("CustomerProfile/{id}",[CustomerController::class,"getProfile"]);
 Route::put("CustomerupdatProfile",[CustomerController::class,"updatProfile"]);
