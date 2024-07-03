@@ -208,6 +208,7 @@ class DoctorController extends Controller
                         'username' => $user->name,
                         'useremail' => $user->email,
                         'roles' => $user->roles,
+                        'fbid' => $user->FbUserID,
                         'token' => $user->createToken('my-app-token')->plainTextToken
                     ], 200);
             } else {
