@@ -179,11 +179,21 @@ class WorkingHourController extends Controller
             ->where('AppointmentTime', $slotStart)
             ->whereIn('status', ['confirmed', 'requested','Completed']);
 
+            $today = date('Y-m-d');
+            $curret_time = date('H:i:s');
+
+            if($today == $appointment_date && $curret_time < $slotStart){
+                $color = 1; // Available
+            } else {
+                $color = 0; // Time closed 
+            }
+
         if ($appointmentTimeQuery->exists()) {
-            $slots[] = ["slot"=>$slotStart, "is_available"=>1];
+            $slots[] = ["slot"=>$slotStart, "is_available"=>1, "appointmentstatus"=>$color];
         } else {
-            $slots[] = ["slot"=>$slotStart, "is_available"=>0];
+            $slots[] = ["slot"=>$slotStart, "is_available"=>0,  "appointmentstatus"=>$color];
         }
+        
 
             // Add the slot to the slots array
            // $slots[$day][] = "$slotStart - $slotEnd";

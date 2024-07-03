@@ -152,6 +152,8 @@ class ChatController extends Controller
              } else {
                 $chatRequests = Chatrequest::where('doctorID', $request->userid)->get();
              }
+
+             
              
              if ($chatRequests->isEmpty()) {
                  return response()->json(['status' => false,'message' => 'No chat requests found.'], 404);
@@ -169,6 +171,14 @@ class ChatController extends Controller
                                 $chat['is_chat_accepted'] = "Your chat account has been Rejected.";
                               }
                         }
+
+                        $user = Customers::select(
+                            DB::raw("CONCAT(first_name, ' ', last_name) as patientName"),
+                            'profile_photo as profileImage'
+                        )->where('id', $chat->patientID)->first();
+
+                        $chat['patientName']  = $user->patientName;
+                        $chat['profileImage']  = $user->profileImage;
                         
                     }
 
