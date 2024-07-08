@@ -67,12 +67,17 @@ class HospitalsController extends Controller
                     $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
                     $hospital['specialities'] = implode(', ', $specialityNames);
                     $WorkingHours = "";
+                    $userData = "";
+                    $hospital['pushToken'] = "";
                 }
            } else {
                 $hospitals = hospital::where('id', $id)->first();
                 if (!$hospitals) {
                     return $this->apiResponse(false, 'No Data found.', []);
                 } else {
+                    $userData = User::select('FbUserID', 'FbToken', 'FBAuth')->find($id);
+                    $hospitals['pushToken'] = $userData->FbToken;
+
                     $appconfig = appcategoryconfig::where("user_id", $hospitals->id)->pluck('category_id')->implode(',');
                     $categoryIds = explode(',', $appconfig);
                     $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
@@ -87,7 +92,8 @@ class HospitalsController extends Controller
             'status' => true,
             'message' => 'Success',
             'data' => $hospitals,
-            'WorkingHours' => $WorkingHours];
+            'WorkingHours' => $WorkingHours,
+            'userData' => $userData];
 
             //return $this->apiResponse(true, 'Success', $hospitals);
             }catch (\Exception $e) {

@@ -38,12 +38,17 @@ class DiagnositcsController extends Controller
                      $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
                      $Diagnositc['specialities'] = implode(', ', $specialityNames);
                      $WorkingHours = "";
+                     $userData = "";
+                     $Diagnositc['pushToken'] = "";
                  }
             } else {
                  $Diagnositcs = Diagnositcs::where('id', $id)->first();
                  if (!$Diagnositcs) {
                      return $this->apiResponse(false, 'No Data found.', []);
                  } else {
+                    $userData = User::select('FbUserID', 'FbToken', 'FBAuth')->find($id);
+                    $Diagnositcs['pushToken'] = $userData->FbToken;
+
                      $appconfig = appcategoryconfig::where("user_id", $Diagnositcs->id)->pluck('category_id')->implode(',');
                      $categoryIds = explode(',', $appconfig);
                      $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
@@ -58,7 +63,7 @@ class DiagnositcsController extends Controller
             'status' => true,
             'message' => 'Success',
             'data' => $Diagnositcs,
-            'WorkingHours' => $WorkingHours];
+            'WorkingHours' => $WorkingHours,'userData' => $userData];
  
             // return $this->apiResponse(true, 'Success', $Diagnositcs);
              }catch (\Exception $e) {
