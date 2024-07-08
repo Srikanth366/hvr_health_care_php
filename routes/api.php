@@ -118,7 +118,7 @@ Route::get("Getcustomersavoritedoctors/{id}",[CustomerController::class,"getsave
 Route::delete('removedoctorfavorites/{id}', [CustomerController::class, "DeletesavedFavorites"]);
 
 Route::post("doctorchangepassword",[DoctorController::class,"customerchangePassword"]);
-Route::post("userhangepassword",[UserController::class,"customerchangePassword"]);
+//Route::post("userhangepassword",[UserController::class,"customerchangePassword"]);
 
 
 Route::post("LoginPage",[UserController::class,"CommonloginAllUsers"]);

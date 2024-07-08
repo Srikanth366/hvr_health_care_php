@@ -276,6 +276,8 @@ class DoctorController extends Controller
                     //$workingHours = availability::where('user_id', $id)->get();
                     $workingHours  = WorkingHour::where('user_id', $id)->get();
 
+                    $userData = User::select('FbUserID', 'FbToken', 'FBAuth')->find($id);
+                    $doctorDetails['pushToken'] = $userData->FbToken;
 
                    $response = [
                     'status' => true,
@@ -283,6 +285,7 @@ class DoctorController extends Controller
                     'data' => $doctorDetails,
                     'speciality'  => $doctorSpecialities,
                     'WorkingHours' => $workingHours,
+                    'userData' => $userData
                 ];
         
                 return response()->json($response);
@@ -788,9 +791,14 @@ class DoctorController extends Controller
             return response()->json(['status'=> false,'message' => 'Please enter valid old password'], 401);
         }
 
-        $customer->password = bcrypt($request->new_password);
+        //$customer->password = bcrypt($request->new_password);
+        $customer->password = Hash::make($request->new_password);
         $customer->save();
 
+        $firebaseUser = FirebaseAuth::getUserByEmail($customer->email);
+        if ($firebaseUser) {
+                FirebaseAuth::updateUser($firebaseUser->uid, ['password' => $request->new_password]);
+        }
        /* $Userslogin->password = bcrypt($request->new_password);
         $Userslogin->save(); */
 
