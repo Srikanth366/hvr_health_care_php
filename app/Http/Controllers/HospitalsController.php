@@ -23,6 +23,7 @@ use App\Models\Appointments;
 use App\Models\Appointment_history;
 use App\Models\Diagnositcs;
 use App\Models\WorkingHour;
+use App\Models\favorite;
 
 class HospitalsController extends Controller
 {
@@ -100,12 +101,74 @@ class HospitalsController extends Controller
                 return $this->apiResponse(false, 'Failed', [], $e->getMessage());
             }
     }
+
+    /********** Hospital List with Favorite ids *************/
+    function gethospitalslistfavorites(Request $request){
+        
+        $validator = Validator::make($request->all(), [
+            'hospital_id' => 'required',
+            'customer_id' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => implode(', ', $validator->errors()->all())
+            ], 422);
+        }
+        
+        try {
+                $hospitals = hospital::where('id', $request->hospital_id)->first();
+                if (!$hospitals) {
+                    return $this->apiResponse(false, 'No Data found.', []);
+                } else {
+                    $userData = User::select('FbUserID', 'FbToken', 'FBAuth')->find($request->hospital_id);
+                    $hospitals['pushToken'] = $userData->FbToken;
+
+                    $appconfig = appcategoryconfig::where("user_id", $hospitals->id)->pluck('category_id')->implode(',');
+                    $categoryIds = explode(',', $appconfig);
+                    $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
+                    $hospitals['specialities'] = implode(', ', $specialityNames);
+                    // $WorkingHours = availability::where('user_id', $id)->get();
+                    $WorkingHours  = WorkingHour::where('user_id', $request->hospital_id)->get();
+
+                    $favorite = favorite::where('doctor_id', $request->hospital_id)
+                     ->where('customer_id', $request->customer_id)
+                     ->first();
+                    if ($favorite) {
+                        $is_favorite = 1;
+                        $favorite_id   = $favorite->id;
+                    } else{
+                        $is_favorite = 0;
+                        $favorite_id = 0;
+                    }
+
+                    $hospitals['is_favorite'] = $is_favorite;
+                    $hospitals['favorite_id'] = $favorite_id;
+                }
+            
+
+          return $response = [
+            'status' => true,
+            'message' => 'Success',
+            'data' => $hospitals,
+            'WorkingHours' => $WorkingHours,
+            'userData' => $userData];
+
+            //return $this->apiResponse(true, 'Success', $hospitals);
+            }catch (\Exception $e) {
+                return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+            }
+    }
+    /********** Hospital List with Favorite ids *************/
     function GetSpecialityWiseAllUsersdata(Request $request){
         try {
             
             $validateUser = Validator::make($request->all(), [
                'speciality_id' => 'required',
-               'user_role' => 'required'
+               'user_role' => 'required',
+               //'customer_id' => 'required'
             ]);
 
             if ($validateUser->fails()) {
@@ -118,6 +181,11 @@ class HospitalsController extends Controller
             }
 
             $role = $request->user_role;
+
+            $customer_id = 0;
+            if (!empty($request->customer_id)) {
+                $customer_id = $request->customer_id;
+            }
 
            if($request->speciality_id == 0){
 
@@ -132,6 +200,25 @@ class HospitalsController extends Controller
                 } else {
                     return $this->apiResponse(false, 'The data provided is invalid.', []);
                 }
+
+                foreach($data as $datavalue){
+                   $doctor_id = $datavalue->id;
+
+                   $favorite = favorite::where('doctor_id', $doctor_id)
+                     ->where('customer_id', $customer_id)
+                     ->first();
+                    if ($favorite) {
+                        $is_favorite = 1;
+                        $favorite_id   = $favorite->id;
+                    } else{
+                        $is_favorite = 0;
+                        $favorite_id = 0;
+                    }
+
+                    $datavalue['is_favorite'] = $is_favorite;
+                    $datavalue['favorite_id'] = $favorite_id;
+                }
+
                 return $this->apiResponse(true, 'Success', $data);
                 /* $data = ['Doctor' => $doctors, 
                             'Hospital' => $hospital, 
@@ -165,6 +252,23 @@ class HospitalsController extends Controller
             if ($data->isEmpty()) {
                 return $this->apiResponse(false, 'No matching data found.', []);
             } else {
+
+                foreach($data as $datavalue){
+                    $doctor_id = $datavalue->id;
+                    $favorite = favorite::where('doctor_id', $doctor_id)
+                      ->where('customer_id', $customer_id)
+                      ->first();
+                     if ($favorite) {
+                         $is_favorite = 1;
+                         $favorite_id   = $favorite->id;
+                     } else{
+                         $is_favorite = 0;
+                         $favorite_id = 0;
+                     }
+ 
+                     $datavalue['is_favorite'] = $is_favorite;
+                     $datavalue['favorite_id'] = $favorite_id;
+                }
                 return $this->apiResponse(true, 'Success', $data);
             }
         }
@@ -727,6 +831,7 @@ class HospitalsController extends Controller
                 'hvr_doctors.profile_status as role',  
                 'hvr_doctors.specialist as specialistCategory',  
             )
+            ->where('hvr_doctors.profile_status', 1)
             ->whereHas('user', function ($query) {
                 $query->where('status', 'Active');
             })
