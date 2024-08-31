@@ -228,6 +228,13 @@ $data = [
                 ], 400);
             }
 
+            /* Check User is Exists or not */
+            $exists = User::where('email', $request->email)->exists();
+            if($exists){
+                return response()->json(['status' => false,'message' => 'This email address is already in use. Please provide a different one.'], 500);
+            }
+            /* Check User is Exists or not end */
+
             $lastInsertId = User::orderBy('id', 'desc')->first()->id;
             $newinsertingId = $lastInsertId + 1;
 
@@ -511,8 +518,55 @@ $data = [
             'status'=> true,
             'message' => 'Password updated successfully',
             'data' => $customerData], 200);
-
     }
+
+        /**************** Delete Users **************/
+        public function destroy($id)
+        {
+            $userData = User::findOrFail($id);
+            
+            if(!empty($userData->FbUserID)){
+                $FireaseUserID = $userData->FbUserID;
+                $response = $this->FirebaseUserID($FireaseUserID);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'The delete option is currently disabled. If you need this feature, please contact support.',
+            ], 404);
+
+            DB::beginTransaction();
+            try {
+              if($userData){
+                $userDeleted = User::where('id', $id)->delete();
+                $customerDeleted = Customers::where('id', $id)->delete();
+                if ($userDeleted && $customerDeleted) {
+                    DB::commit();
+                    return response()->json(['message' => 'Record deleted successfully'], 200);
+                } else {
+                    DB::rollBack();
+                    return response()->json(['message' => 'Record not found or could not be deleted'], 404);
+                }
+              } else {
+                return response()->json(['message' => 'Record not found or could not be deleted'], 404);
+              }
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json(['message' => 'An error occurred', 'error' => $e->getMessage()], 500);
+            }
+        }
+
+        public function FirebaseUserID($FireaseUserID){
+            try {
+
+                FirebaseAuth::deleteUser($FireaseUserID);
+                return response()->json(['message' => 'User deleted successfully from Firebase'], 200);
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'An error occurred', 'error' => $e->getMessage()], 500);
+            }
+        }
+
+        /************* Delete Users ****************/
 
     public function AllUsersResetPassword(Request $request){
 
@@ -610,7 +664,7 @@ $data = [
             ], 422);
         }
         try {
-            $doctorDetails = hvr_doctors::find($request->doctor_id);
+            $doctorDetails = User::find($request->doctor_id);
             $customerDetails = Customers::find($request->customer_id);
 
             $isFavorite = favorite::where('doctor_id', $request->doctor_id)
@@ -620,7 +674,7 @@ $data = [
         if ($isFavorite) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Doctor was already added in the favorites',
+                    'message' => 'This user has already been added to your favorites.',
                 ], 200);
         }
         else {
@@ -657,11 +711,72 @@ $data = [
     function getsavedFavorites($id){
         try {
 
-            $favorite_doctors = DB::table('favorites')
+           /* $favorite_doctors = DB::table('favorites')
             ->join('hvr_doctors', 'favorites.doctor_id', '=', 'hvr_doctors.id')
             ->where('favorites.customer_id', $id)
             ->select('favorites.id as favorite_pk_id','hvr_doctors.id as doctor_id','first_name','last_name','gender','specialist','qualification','expeirence','latitude','longitute','address','profile','profile_photo','profile_status','firebaseUserId')
+            ->get(); */
+
+            $favorites = DB::table('favorites')
+            ->where('customer_id', $id)
+            ->orderBy('id', 'desc')
             ->get();
+
+            $favorite_doctors = [];
+
+            foreach ($favorites as $favorite) {
+                $favorite_pk_id = $favorite->id;
+                $doctor_id = $favorite->doctor_id;
+                $customer_id = $favorite->customer_id;
+                $status = $favorite->status;
+                $requested_at = $favorite->created_at;
+                $status_updated_at = $favorite->updated_at;
+
+                $users = DB::table('users')->where('id', $doctor_id)->limit(1)->get();
+                $userName = $users->first()->name;
+                $userRoles = $users->first()->roles;
+                $userEmail = $users->first()->email;
+                $FbUserID = $users->first()->FbUserID;
+
+                if($userRoles == 'Doctor'){
+                    $favoritesusersData = DB::select('SELECT expeirence as experience, latitude, longitute as longitude, address,profile_photo  FROM hvr_doctors WHERE id = ?', [$doctor_id]);
+                } else if($userRoles == 'Hospital'){
+                    $favoritesusersData = DB::select('SELECT h.latitude, h.longitude, h.registered_address as address, h.experience, h.logo as profile_photo FROM hospitals as h WHERE id = ?', [$doctor_id]);
+                } else if($userRoles == 'Pharmacy'){
+                    $favoritesusersData = DB::select('SELECT h.latitude, h.longitude, h.registered_address as address, h.experience, h.logo as profile_photo FROM pharmacy as h WHERE id = ?', [$doctor_id]);
+                } else if($userRoles == 'Diagnositcs'){
+                    $favoritesusersData = DB::select('SELECT h.latitude, h.longitude, h.registered_address as address, h.experience, h.logo as profile_photo FROM diagnositcs as h WHERE id = ?', [$doctor_id]); 
+                }
+
+                if (!empty($favoritesusersData)) {
+                    $latitude = $favoritesusersData[0]->latitude;
+                    $longitude = $favoritesusersData[0]->longitude;
+                    $address = $favoritesusersData[0]->address;
+                    $experience = $favoritesusersData[0]->experience;
+                    $profile_photo = $favoritesusersData[0]->profile_photo;
+
+                    $favorite_doctors[] = [
+                        'favorite_pk_id' => $favorite_pk_id,
+                        'doctor_id' => $doctor_id,
+                        'customer_id' => $customer_id,
+                        'favoriteName' => $userName,
+                        'favoriteRole' => $userRoles,
+                        'favoriteEmail' => $userEmail,
+                        'favoriteFbUserID' => $FbUserID,
+                        'latitude' => $latitude,
+                        'longitude' => $longitude,
+                        'address' => $address,
+                        'experience' => $experience,
+                        'profile_photo' => $profile_photo,
+                        'requested_status' => $status,
+                        'requested_at' => $requested_at,
+                        'status_updated_at' => $status_updated_at
+                        
+                    ];
+
+                }
+            }
+
 
             if (!$favorite_doctors) {
                     return $this->apiResponse(true, 'No Data found', []);
@@ -702,6 +817,69 @@ $data = [
                 return $this->apiResponse(false, 'Failed', [], $e->getMessage());
             }   
     } 
+
+    /*** MY FAvorites *************/
+    function getUserFavorites($id){
+        try {
+
+            $favorites = DB::table('favorites')
+            ->where('doctor_id', $id)
+            ->orderBy('id', 'desc')
+            ->get();
+
+            $favorite_doctors = [];
+
+            foreach ($favorites as $favorite) {
+                $favorite_pk_id = $favorite->id;
+                $doctor_id = $favorite->doctor_id;
+                $customer_id = $favorite->customer_id;
+                $status = $favorite->status;
+                $requested_at = $favorite->created_at;
+                $status_updated_at = $favorite->updated_at;
+                
+
+                $users = DB::table('users')->where('id', $customer_id)->limit(1)->get();
+                $userName = $users->first()->name;
+                $userRoles = $users->first()->roles;
+                $userEmail = $users->first()->email;
+                $FbUserID = $users->first()->FbUserID;
+
+                if($userRoles == 'Customer'){
+                    $favoritesusersData = DB::select('SELECT * FROM customer WHERE id = ?', [$customer_id]);
+                }
+
+                if (!empty($favoritesusersData)) {
+                   // $latitude = $favoritesusersData[0]->latitude;
+
+                    $favorite_doctors[] = [
+                        'favorite_pk_id' => $favorite_pk_id,
+                        'doctor_id' => $doctor_id,
+                        'customer_id' => $customer_id,
+                        'favoriteName' => $userName,
+                        'favoriteRole' => $userRoles,
+                        'favoriteEmail' => $userEmail,
+                        'favoriteFbUserID' => $FbUserID,
+                        //'mobile_number' => $favoritesusersData[0]->mobile_number,
+                        'profile_photo' => $favoritesusersData[0]->profile_photo,
+                        'requested_status' => $status,
+                        'requested_at' => $requested_at,
+                        'status_updated_at' => $status_updated_at
+                    ];
+
+                }
+            }
+
+            if (!$favorite_doctors) {
+                    return $this->apiResponse(true, 'No Data found', []);
+            }else {
+                    return $this->apiResponse(true, 'Success', $favorite_doctors);
+            }
+
+            }catch (\Exception $e) {
+                return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+            }   
+    }
+    /*********** MY FAvorites ********/
 
     
 }

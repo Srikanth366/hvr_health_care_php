@@ -14,7 +14,7 @@ class Doctorspeciality extends Controller
 
     function getdoctorspeciality(){
         try {
-        $specialties = Specialists::orderBy("id")->get();
+        $specialties = Specialists::orderBy("priority")->get();
         return $this->apiResponse(true, 'Success', $specialties);
         }catch (\Exception $e) {
             return $this->apiResponse(false, 'Failed', [], $e->getMessage());

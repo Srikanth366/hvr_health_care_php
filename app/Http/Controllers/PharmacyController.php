@@ -19,6 +19,7 @@ use App\Models\Appointments;
 use App\Models\Appointment_history;
 use App\Models\Specialists;
 use App\Models\WorkingHour;
+use App\Models\favorite;
 
 
 class PharmacyController extends Controller
@@ -68,6 +69,65 @@ class PharmacyController extends Controller
                  return $this->apiResponse(false, 'Failed', [], $e->getMessage());
              }
     }
+
+    /************* Get Pharmacy with Favorites ************/
+    function getpharmacylistfavorites(Request $request){
+
+                $validator = Validator::make($request->all(), [
+                    'pharmacy_id' => 'required',
+                    'customer_id' => 'required'
+                ]);
+
+                if ($validator->fails()) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Validation error',
+                        'errors' => implode(', ', $validator->errors()->all())
+                    ], 422);
+                }
+
+        try {
+                 $Diagnositcs = Pharmacy::where('id', $request->pharmacy_id)->first();
+                 if (!$Diagnositcs) {
+                     return $this->apiResponse(false, 'No Data found.', []);
+                 } else {
+                    $userData = User::select('FbUserID', 'FbToken', 'FBAuth')->find($request->pharmacy_id);
+                    $Diagnositcs['pushToken'] = $userData->FbToken;
+                     $appconfig = appcategoryconfig::where("user_id", $Diagnositcs->id)->pluck('category_id')->implode(',');
+                     $categoryIds = explode(',', $appconfig);
+                     $specialityNames = Specialists::whereIn('id', $categoryIds)->pluck('speciality')->toArray();
+                     $Diagnositcs['specialities'] = implode(', ', $specialityNames);
+                    // $WorkingHours = availability::where('user_id', $id)->get();
+                     $WorkingHours  = WorkingHour::where('user_id', $request->pharmacy_id)->get();
+
+                     $favorite = favorite::where('doctor_id', $request->pharmacy_id)
+                     ->where('customer_id', $request->customer_id)
+                     ->first();
+                    if ($favorite) {
+                        $is_favorite = 1;
+                        $favorite_id   = $favorite->id;
+                    } else{
+                        $is_favorite = 0;
+                        $favorite_id = 0;
+                    }
+
+                    $Diagnositcs['is_favorite'] = $is_favorite;
+                    $Diagnositcs['favorite_id'] = $favorite_id;
+                 }
+        
+
+           return $response = [
+            'status' => true,
+            'message' => 'Success',
+            'data' => $Diagnositcs,
+            'WorkingHours' => $WorkingHours,'userData' => $userData];
+
+             //return $this->apiResponse(true, 'Success', $Diagnositcs);
+             }catch (\Exception $e) {
+                 return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+             }
+    }
+    /********** Get Pharmacy With Favorites End */
 
     function CreatePharmacy(Request $request){
         try {

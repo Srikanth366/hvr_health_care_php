@@ -170,19 +170,26 @@ class WorkingHourController extends Controller
         $endTime = Carbon::createFromFormat('H:i:s', $workingHour->end_time);
 
         while ($startTime->lessThan($endTime)) {
+
             $slotStart = $startTime->format('H:i:s');
             $startTime->addMinutes(10);
             $slotEnd = $startTime->format('H:i:s');
+            $curret_time = date('H:i:s');
+            $today = date('Y-m-d');
+
+            if($today == $appointment_date && $curret_time >= $slotStart) {
+                continue;
+            }
 
             $appointmentTimeQuery = Appointments::where('DoctorID', $user_id)
             ->where('AppointmentDate', $appointment_date)
             ->where('AppointmentTime', $slotStart)
             ->whereIn('status', ['confirmed', 'requested','Completed']);
-
-            $today = date('Y-m-d');
-            $curret_time = date('H:i:s');
+       
 
             if($today == $appointment_date && $curret_time < $slotStart){
+                $color = 1; // Available
+            } else if($today < $appointment_date) {
                 $color = 1; // Available
             } else {
                 $color = 0; // Time closed 

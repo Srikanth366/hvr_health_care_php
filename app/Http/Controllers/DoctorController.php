@@ -295,6 +295,71 @@ class DoctorController extends Controller
             }   
     }
 
+    /********************* POST Method to fetch doctor details **************/
+    function getDoctorProfileData(Request $request){
+        try {
+
+            $validator = Validator::make($request->all(), [
+                'doctor_id' => 'required',
+                'customer_id' => 'required'
+            ]);
+    
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Validation error',
+                    'errors' => implode(', ', $validator->errors()->all())
+                ], 422);
+            }
+
+            try {
+            $doctorDetails = hvr_doctors::find($request->doctor_id);
+
+                if (!$doctorDetails) {
+                    return $this->apiResponse(false, 'No Data found', []);
+                }else {
+                    $specialitys = explode(",", $doctorDetails->specialist);
+                    $doctorSpecialities = Specialists::query()->whereIn('id', $specialitys)->get();
+                    //$workingHours = availability::where('user_id', $id)->get();
+                    $workingHours  = WorkingHour::where('user_id', $request->doctor_id)->get();
+
+                    $userData = User::select('FbUserID', 'FbToken', 'FBAuth')->find($request->doctor_id);
+                    $doctorDetails['pushToken'] = $userData->FbToken;
+
+                    $favorite = favorite::where('doctor_id', $request->doctor_id)
+                            ->where('customer_id', $request->customer_id)
+                            ->first();
+
+                    if ($favorite) {
+                        $is_favorite = 1;
+                        $favorite_id   = $favorite->id;
+                    } else{
+                        $is_favorite = 0;
+                        $favorite_id = 0;
+                    }
+
+                    $doctorDetails['is_favorite'] = $is_favorite;
+                    $doctorDetails['favorite_id'] = $favorite_id;
+
+                   $response = [
+                    'status' => true,
+                    'message' => 'Success',
+                    'data' => $doctorDetails,
+                    'speciality'  => $doctorSpecialities,
+                    'WorkingHours' => $workingHours,
+                    'userData' => $userData
+                ];
+        
+                return response()->json($response);
+                }
+            }catch (\Exception $e) {
+                return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+            } 
+        }catch (\Exception $e) {
+            return $this->apiResponse(false, 'Failed', [], $e->getMessage());
+        }  
+    }
+    /*************** POST Method to fetch doctor details ******************************/
     function updateDoctorStatusData(Request $request){
         
         $validator = Validator::make($request->all(), [
@@ -555,7 +620,7 @@ class DoctorController extends Controller
         $latitude = $request->input('latitude');
         $longitute = $request->input('longitute');
         $specialist = $request->input('specialist');
-        $radius = 10; //$request->input('radius'); // in kilometers
+        $radius = 100; //$request->input('radius'); // in kilometers
 
         // Calculate distance using Haversine formula
          /* $doctors = hvr_doctors::selectRaw("
@@ -583,7 +648,7 @@ class DoctorController extends Controller
             ->where('profile_status', '=', 1)
             ->whereRaw("CONCAT(',', specialist, ',') LIKE '%,$specialist,%'")
             ->having('distance', '<', $radius)
-            ->orderBy('distance')
+            ->orderBy('distance', 'DESC')
             ->get();
 
             if ($doctors->count() > 0) {
@@ -1321,7 +1386,7 @@ class DoctorController extends Controller
         public function GetPushNotification($id)
         {
             try {
-                $data = PushNotification::where('user_id', $id)->get();
+                $data = PushNotification::where('user_id', $id)->where('status', 0)->get();
                 if ($data->isEmpty()) {
                     return response()->json(['status' => false,'message' => 'No records found.'], 404);
                 }
